@@ -3,23 +3,42 @@ const router = express.Router();
 
 const authController = require("../controllers/authController");
 
-const {
-  verifyToken,
-} = require("../middlewares/authMiddleware");
+const { verifyToken } = require("../middlewares/authMiddleware");
+const { authorizeRoles } = require("../middlewares/roleMiddleware");
 
-// REGISTER
+// Auth publique
 router.post("/register", authController.register);
-
-// LOGIN
 router.post("/login", authController.login);
 
-// ROUTE PROTEGEE
+// Route protégée : utilisateur connecté
+router.get("/profile", verifyToken, (req, res) => {
+  res.status(200).json({
+    message: "Profil utilisateur connecté",
+    user: req.user,
+  });
+});
+
+// Route protégée : propriétaire seulement
 router.get(
-  "/profile",
+  "/owner-only",
   verifyToken,
+  authorizeRoles("proprietaire"),
   (req, res) => {
-    res.json({
-      message: "Route protégée",
+    res.status(200).json({
+      message: "Accès propriétaire autorisé",
+      user: req.user,
+    });
+  }
+);
+
+// Route protégée : admin seulement
+router.get(
+  "/admin-only",
+  verifyToken,
+  authorizeRoles("admin"),
+  (req, res) => {
+    res.status(200).json({
+      message: "Accès administrateur autorisé",
       user: req.user,
     });
   }
