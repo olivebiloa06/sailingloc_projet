@@ -1,16 +1,20 @@
+const { sequelize } = require("./models");
 const express = require("express");
 const cors = require("cors");
 const User = require("./models/User");
 const authRoutes = require("./routes/authRoutes");
+const boatRoutes = require("./routes/boatRoutes");
+const availabilityRoutes = require("./routes/availabilityRoutes");
 require("dotenv").config();
 
-const sequelize = require("./config/database");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/boats", boatRoutes);
+app.use("/api/availabilities", availabilityRoutes);
 
 app.get("/", (req, res) => {
   res.send("API SailingLoc fonctionne !");
