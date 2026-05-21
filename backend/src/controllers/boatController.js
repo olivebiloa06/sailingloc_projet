@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const { Boat, User } = require("../models");
 
 // Ajouter un bateau
@@ -13,6 +14,8 @@ exports.createBoat = async (req, res) => {
       longueur,
       avecSkipper,
       imageUrl,
+      latitude,
+      longitude,
     } = req.body;
 
     const boat = await Boat.create({
@@ -25,6 +28,8 @@ exports.createBoat = async (req, res) => {
       longueur,
       avecSkipper,
       imageUrl,
+      latitude,
+      longitude,
       statut: "publie",
       userId: req.user.id,
     });
@@ -40,10 +45,75 @@ exports.createBoat = async (req, res) => {
   }
 };
 
-// Voir tous les bateaux
+/// Voir tous les bateaux + recherche avancée
 exports.getAllBoats = async (req, res) => {
   try {
+    const {
+      localisation,
+      type,
+      minPrice,
+      maxPrice,
+      capacite,
+      avecSkipper,
+      search,
+    } = req.query;
+
+    const filters = {};
+
+    if (localisation) {
+      filters.localisation = {
+        [Op.iLike]: `%${localisation}%`,
+      };
+    }
+
+    if (type) {
+      filters.type = type;
+    }
+
+    if (capacite) {
+      filters.capacite = {
+        [Op.gte]: Number(capacite),
+      };
+    }
+
+    if (avecSkipper !== undefined) {
+      filters.avecSkipper = avecSkipper === "true";
+    }
+
+    if (minPrice || maxPrice) {
+      filters.prixJour = {};
+
+      if (minPrice) {
+        filters.prixJour[Op.gte] = Number(minPrice);
+      }
+
+      if (maxPrice) {
+        filters.prixJour[Op.lte] = Number(maxPrice);
+      }
+    }
+
+    if (search) {
+      filters[Op.or] = [
+        {
+          nom: {
+            [Op.iLike]: `%${search}%`,
+          },
+        },
+        {
+          description: {
+            [Op.iLike]: `%${search}%`,
+          },
+        },
+        {
+          localisation: {
+            [Op.iLike]: `%${search}%`,
+          },
+        },
+      ];
+    }
+
     const boats = await Boat.findAll({
+      where: filters,
       include: [
         {
           model: User,
@@ -55,6 +125,8 @@ exports.getAllBoats = async (req, res) => {
 
     return res.status(200).json({
       message: "Liste des bateaux récupérée avec succès",
+      total: boats.length,
+      filters: req.query,
       boats,
     });
   } catch (error) {
@@ -156,4 +228,5 @@ exports.deleteBoat = async (req, res) => {
       message: error.message,
     });
   }
+  
 };

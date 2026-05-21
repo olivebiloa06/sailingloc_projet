@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: sailingloc_postgres
+
+    restart: always
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: sailingloc
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+
+    container_name: sailingloc_backend
+
+    restart: always
+
+    ports:
+      - "5001:5000"
+
+    depends_on:
+      - postgres
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sailingloc
+      DB_USER: postgres
+      DB_PASSWORD: postgres123
+      JWT_SECRET: sailingloc_secret
+
+volumes:
+  postgres_data:

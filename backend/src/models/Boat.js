@@ -53,6 +53,16 @@ const Boat = sequelize.define("Boat", {
     allowNull: true,
   },
 
+  latitude: {
+  type: DataTypes.FLOAT,
+  allowNull: true,
+},
+
+longitude: {
+  type: DataTypes.FLOAT,
+  allowNull: true,
+},
+
   statut: {
     type: DataTypes.ENUM("brouillon", "en_attente", "publie", "suspendu"),
     defaultValue: "en_attente",
