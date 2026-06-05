@@ -628,9 +628,9 @@ Puis contrôler les variables `.env` :
 ```env
 DB_HOST=localhost
 DB_PORT=5433
-DB_NAME=sailingloc_db
+DB_NAME=sailingloc_dev
 DB_USER=postgres
-DB_PASSWORD=postgres
+DB_PASSWORD=postgres123
 ```
 
 ### Les tables ne sont pas créées
