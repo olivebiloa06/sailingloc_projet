@@ -14,7 +14,7 @@ const Payment = sequelize.define("Payment", {
   },
 
   methode: {
-    type: DataTypes.ENUM("stripe", "paypal", "carte_bancaire"),
+    type: DataTypes.ENUM("stripe", "paypal", "carte_bancaire", "manuel"),
     defaultValue: "stripe",
   },
 

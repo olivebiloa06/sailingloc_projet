@@ -2,13 +2,13 @@ const express = require("express");
 const router = express.Router();
 
 const uploadController = require("../controllers/uploadController");
-const upload = require("../middlewares/uploadMiddleware");
+const { uploadBoatImage } = require("../middlewares/uploadMiddleware");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
 router.post(
   "/boat/:boatId",
   verifyToken,
-  upload.single("image"),
+  uploadBoatImage.single("image"),
   uploadController.uploadBoatImage
 );
 
