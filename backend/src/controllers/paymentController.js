@@ -3,17 +3,34 @@ const { sendPaymentConfirmation } = require("../services/emailService");
 const { createCheckoutSession } = require("../services/stripeService");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-// Paiement simulé
-exports.payBooking = async (req, res) => {
+// =========================
+// ENCAISSEMENT MANUEL — réservé admin
+// =========================
+// Avant correction, cette route ("paiement simulé") permettait à n'importe
+// quel locataire connecté de marquer SA PROPRE réservation comme payée en
+// appelant simplement l'endpoint, sans qu'aucun argent ne transite réellement
+// — et elle acceptait en plus un champ cardNumber jamais utilisé (on ne fait
+// JAMAIS transiter de numéro de carte par notre propre serveur, même sans le
+// stocker : c'est le rôle de Stripe Checkout).
+//
+// Cette route ne doit servir qu'à un usage interne précis : enregistrer
+// qu'une réservation a été réglée par un moyen hors plateforme (virement,
+// espèces lors d'un litige, etc.), à l'initiative d'un administrateur — elle
+// est donc maintenant verrouillée par authorizeRoles("admin") au niveau de la
+// route (paymentRoutes.js) ET revérifiée ici par sécurité.
+exports.markBookingAsPaidManually = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Accès interdit : réservé à l'administrateur",
+      });
+    }
+
     const { bookingId } = req.params;
-    const { paymentMethod, cardNumber } = req.body;
 
     const booking = await Booking.findByPk(bookingId, {
       include: [
-        {
-          model: Boat,
-        },
+        { model: Boat },
         {
           model: User,
           attributes: ["id", "email", "nom", "prenom"],
@@ -27,16 +44,8 @@ exports.payBooking = async (req, res) => {
       });
     }
 
-    if (booking.userId !== req.user.id && req.user.role !== "admin") {
-      return res.status(403).json({
-        message: "Accès interdit",
-      });
-    }
-
     const existingPayment = await Payment.findOne({
-      where: {
-        bookingId,
-      },
+      where: { bookingId },
     });
 
     if (existingPayment) {
@@ -45,12 +54,12 @@ exports.payBooking = async (req, res) => {
       });
     }
 
-    const transactionId = "PAY-" + Date.now();
+    const transactionId = "MANUAL-" + Date.now();
 
     const payment = await Payment.create({
       bookingId,
       montant: booking.montantTotal,
-      methode: paymentMethod || "carte_bancaire",
+      methode: "manuel",
       statut: "paye",
       referenceTransaction: transactionId,
       datePaiement: new Date(),
@@ -64,7 +73,7 @@ exports.payBooking = async (req, res) => {
     }
 
     return res.status(201).json({
-      message: "Paiement effectué avec succès",
+      message: "Réservation marquée comme payée (encaissement manuel)",
       payment,
       booking,
     });
@@ -75,7 +84,14 @@ exports.payBooking = async (req, res) => {
   }
 };
 
-
+// =========================
+// WEBHOOK STRIPE
+// =========================
+// Monté directement dans server.js, AVANT express.json(), avec express.raw().
+// req.body doit impérativement être le buffer brut non parsé : c'est ce que
+// stripe.webhooks.constructEvent() utilise pour recalculer la signature HMAC
+// et la comparer à l'en-tête "stripe-signature". Voir server.js pour le détail
+// du correctif (cette route n'est plus dupliquée via paymentRoutes).
 exports.stripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
 
@@ -133,8 +149,10 @@ exports.stripeWebhook = async (req, res) => {
   }
 };
 
+// =========================
+// CRÉER UNE SESSION STRIPE CHECKOUT
+// =========================
 
-// Créer une session Stripe Checkout
 exports.createStripeSession = async (req, res) => {
   try {
     const { bookingId } = req.params;
@@ -173,7 +191,10 @@ exports.createStripeSession = async (req, res) => {
   }
 };
 
-// Voir mes paiements
+// =========================
+// VOIR MES PAIEMENTS
+// =========================
+
 exports.getMyPayments = async (req, res) => {
   try {
     const payments = await Payment.findAll({

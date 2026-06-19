@@ -1,22 +1,51 @@
 const express = require("express");
 const router = express.Router();
+const rateLimit = require("express-rate-limit");
 
 const authController = require("../controllers/authController");
 
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 
-// Auth publique
-router.post("/register", authController.register);
-router.post("/login", authController.login);
-
-// Route protégée : utilisateur connecté
-router.get("/profile", verifyToken, (req, res) => {
-  res.status(200).json({
-    message: "Profil utilisateur connecté",
-    user: req.user,
-  });
+// Le rate limit global de server.js (100 req/15min sur toute l'API) ne suffit
+// pas à freiner le brute-force sur /login. Le cahier des charges (page 92)
+// prévoit explicitement une limite de 5 tentatives de connexion / 15 minutes.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    message: "Trop de tentatives de connexion. Réessayez dans 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+
+// Limite un peu plus large sur l'inscription (anti-spam de comptes), sans
+// pénaliser un utilisateur qui corrige une faute de frappe dans son formulaire.
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: {
+    message: "Trop de tentatives d'inscription. Réessayez dans 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Auth publique
+router.post("/register", registerLimiter, authController.register);
+router.post("/login", loginLimiter, authController.login);
+
+// Renouvellement de l'access token à partir du refresh token (cookie HttpOnly)
+router.post("/refresh", authController.refresh);
+
+// Déconnexion : révoque le refresh token courant
+router.post("/logout", authController.logout);
+
+// Route protégée : utilisateur connecté (renvoie le profil à jour depuis la
+// base de données, pas seulement le contenu — potentiellement obsolète — du
+// token)
+router.get("/profile", verifyToken, authController.getProfile);
 
 // Route protégée : propriétaire seulement
 router.get(

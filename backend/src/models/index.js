@@ -8,6 +8,7 @@ const Payment = require("./Payment");
 const Review = require("./Review");
 const Contract = require("./Contract");
 const Document = require("./Document");
+const RefreshToken = require("./RefreshToken");
 
 // =======================
 // USER RELATIONS
@@ -140,6 +141,19 @@ Document.belongsTo(Boat, {
   foreignKey: "boatId",
 });
 
+// =======================
+// REFRESH TOKENS
+// =======================
+
+User.hasMany(RefreshToken, {
+  foreignKey: "userId",
+  onDelete: "CASCADE",
+});
+
+RefreshToken.belongsTo(User, {
+  foreignKey: "userId",
+});
+
 module.exports = {
   sequelize,
   User,
@@ -150,4 +164,5 @@ module.exports = {
   Review,
   Contract,
   Document,
+  RefreshToken,
 };

@@ -1,6 +1,30 @@
 const { Op } = require("sequelize");
 const { Boat, User } = require("../models");
 
+// Champs qu'un propriétaire est autorisé à modifier lui-même sur son bateau.
+// userId et statut sont volontairement exclus : un propriétaire ne doit pas
+// pouvoir transférer son bateau à un autre compte (userId) ni s'auto-publier
+// en contournant une éventuelle modération (statut). Seul un admin peut
+// modifier ces champs (voir updateBoat).
+const OWNER_EDITABLE_FIELDS = [
+  "nom",
+  "type",
+  "description",
+  "localisation",
+  "prixJour",
+  "capacite",
+  "longueur",
+  "avecSkipper",
+  "imageUrl",
+  "latitude",
+  "longitude",
+];
+
+// Attributs User strictement nécessaires à l'affichage public d'un bateau.
+// L'email et le rôle du propriétaire n'ont rien à faire visibles par un
+// visiteur non connecté (fuite de données personnelles).
+const PUBLIC_OWNER_ATTRIBUTES = ["id", "nom", "prenom"];
+
 // Ajouter un bateau
 exports.createBoat = async (req, res) => {
   try {
@@ -117,7 +141,7 @@ exports.getAllBoats = async (req, res) => {
       include: [
         {
           model: User,
-          attributes: ["id", "nom", "prenom", "email", "role"],
+          attributes: PUBLIC_OWNER_ATTRIBUTES,
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -145,7 +169,7 @@ exports.getBoatById = async (req, res) => {
       include: [
         {
           model: User,
-          attributes: ["id", "nom", "prenom", "email", "role"],
+          attributes: PUBLIC_OWNER_ATTRIBUTES,
         },
       ],
     });
@@ -186,7 +210,20 @@ exports.updateBoat = async (req, res) => {
       });
     }
 
-    await boat.update(req.body);
+    // SÉCURITÉ : on ne fait plus boat.update(req.body) tel quel (mass
+    // assignment). Un admin peut tout modifier (y compris userId/statut pour
+    // de la modération) ; un propriétaire ne peut modifier que les champs de
+    // la whitelist OWNER_EDITABLE_FIELDS.
+    const payload =
+      req.user.role === "admin"
+        ? req.body
+        : Object.fromEntries(
+            Object.entries(req.body).filter(([key]) =>
+              OWNER_EDITABLE_FIELDS.includes(key)
+            )
+          );
+
+    await boat.update(payload);
 
     return res.status(200).json({
       message: "Bateau modifié avec succès",
@@ -228,5 +265,4 @@ exports.deleteBoat = async (req, res) => {
       message: error.message,
     });
   }
-  
 };

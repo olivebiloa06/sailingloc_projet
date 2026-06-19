@@ -3,11 +3,16 @@ const router = express.Router();
 
 const paymentController = require("../controllers/paymentController");
 const { verifyToken } = require("../middlewares/authMiddleware");
+const { authorizeRoles } = require("../middlewares/roleMiddleware");
 
+// Encaissement manuel — réservé admin (ex. règlement par virement/espèces
+// hors plateforme). Ne JAMAIS exposer ça à un locataire : voir
+// paymentController.markBookingAsPaidManually pour le détail du correctif.
 router.post(
   "/pay/:bookingId",
   verifyToken,
-  paymentController.payBooking
+  authorizeRoles("admin"),
+  paymentController.markBookingAsPaidManually
 );
 
 router.post(
@@ -22,9 +27,10 @@ router.get(
   paymentController.getMyPayments
 );
 
-router.post(
-  "/stripe/webhook",
-  paymentController.stripeWebhook
-);
+// NOTE IMPORTANTE : la route POST /stripe/webhook n'est plus définie ici.
+// Elle est montée une seule fois dans server.js, avant express.json(), avec
+// express.raw() — condition indispensable pour que la vérification de
+// signature Stripe fonctionne. La redéfinir ici recréerait le bug de double
+// montage corrigé (voir le commentaire dans server.js).
 
 module.exports = router;
