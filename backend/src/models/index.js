@@ -30,6 +30,7 @@ Boat.belongsTo(User, {
 Boat.hasMany(Availability, {
   foreignKey: "boatId",
   onDelete: "CASCADE",
+  as: "availabilities",
 });
 
 Availability.belongsTo(Boat, {

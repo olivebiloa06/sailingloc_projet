@@ -37,6 +37,13 @@ router.get(
   documentController.getDocumentFile
 );
 
+// Admin — tous les documents en attente de validation
+router.get(
+  "/admin/pending",
+  verifyToken,
+  documentController.getAllPendingDocuments
+);
+
 // Valider / refuser un document — admin
 router.patch(
   "/:id/validate",

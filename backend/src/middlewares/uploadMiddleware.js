@@ -37,12 +37,21 @@ const imageFileFilter = (req, file, cb) => {
 };
 
 const documentFileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  // Sur Windows, les PDF sont parfois envoyés avec mimetype
+  // "application/octet-stream" — on accepte ce cas et on laisse
+  // isFileSignatureValid (magic bytes) faire la vraie vérification de contenu.
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+    "application/octet-stream",
+  ];
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Format de fichier non autorisé"), false);
+    cb(new Error("Format non autorisé. Acceptés : PDF, JPG, PNG."), false);
   }
 };
 

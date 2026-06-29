@@ -1,5 +1,7 @@
 const { Op } = require("sequelize");
-const { sequelize, Booking, Boat, Availability } = require("../models");
+const { sequelize, Booking, Boat, Availability, Payment, User } = require("../models");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const paypalService = require("../services/paypalService");
 
 // =========================
 // CRÉER UNE RÉSERVATION
@@ -139,6 +141,10 @@ exports.getMyBookings = async (req, res) => {
         {
           model: Boat,
         },
+        {
+          model: Payment,
+          required: false,
+        },
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -155,9 +161,146 @@ exports.getMyBookings = async (req, res) => {
 };
 
 // =========================
+// DÉTAIL D'UNE RÉSERVATION
+// =========================
+// Nécessaire pour que la page de paiement fonctionne aussi en accès direct
+// (lien partagé, rechargement de page), pas seulement juste après création.
+
+exports.getBookingById = async (req, res) => {
+  try {
+    const booking = await Booking.findByPk(req.params.id, {
+      include: [{ model: Boat }],
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        message: "Réservation introuvable",
+      });
+    }
+
+    if (booking.userId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Accès interdit : cette réservation ne vous appartient pas",
+      });
+    }
+
+    res.status(200).json({
+      message: "Réservation récupérée avec succès",
+      booking,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// =========================
+// DEMANDES DE RÉSERVATION REÇUES (PROPRIÉTAIRE)
+// =========================
+// Nouveau : avant, une réservation passait directement de "en_attente" au
+// paiement, sans jamais demander l'avis du propriétaire — incohérent avec
+// la promesse "vous ne serez débité qu'en cas d'acceptation". Cette route
+// liste, pour le propriétaire connecté, toutes les demandes faites sur SES
+// bateaux (peu importe le statut, pour qu'il voie aussi l'historique).
+
+exports.getOwnerBookingRequests = async (req, res) => {
+  try {
+    const bookings = await Booking.findAll({
+      include: [
+        {
+          model: Boat,
+          where: { userId: req.user.id },
+        },
+        {
+          model: User,
+          attributes: ["id", "nom", "prenom", "email"],
+        },
+        {
+          model: Payment,
+          required: false,
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.status(200).json({
+      message: "Demandes de réservation récupérées avec succès",
+      bookings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// =========================
+// ACCEPTER / REFUSER UNE DEMANDE (PROPRIÉTAIRE)
+// =========================
+// C'est CE verrou qui rend vraie la promesse "vous ne serez débité qu'en cas
+// d'acceptation" : tant que le propriétaire n'a pas accepté, createStripeSession
+// et createPaypalOrder refusent de créer la moindre session de paiement (voir
+// paymentController.js).
+
+exports.respondToBookingRequest = async (req, res) => {
+  try {
+    const { action } = req.body;
+
+    if (action !== "accepter" && action !== "refuser") {
+      return res.status(400).json({
+        message: "Le champ action doit valoir \"accepter\" ou \"refuser\"",
+      });
+    }
+
+    const booking = await Booking.findByPk(req.params.id, {
+      include: [{ model: Boat }],
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        message: "Réservation introuvable",
+      });
+    }
+
+    if (!booking.Boat || booking.Boat.userId !== req.user.id) {
+      return res.status(403).json({
+        message: "Accès interdit : vous n'êtes pas propriétaire de ce bateau",
+      });
+    }
+
+    if (booking.statut !== "en_attente") {
+      return res.status(400).json({
+        message: "Cette demande a déjà été traitée",
+      });
+    }
+
+    booking.statut = action === "accepter" ? "acceptee" : "annulee";
+    await booking.save();
+
+    return res.status(200).json({
+      message: action === "accepter" ? "Demande acceptée" : "Demande refusée",
+      booking,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// =========================
 // ANNULER UNE RÉSERVATION
 // =========================
-
+// Avant correction : changeait juste le statut en "annulee", sans jamais
+// rembourser un paiement déjà encaissé chez Stripe — la réservation
+// disparaissait côté site, mais le client restait débité. Corrigé pour :
+// (1) refuser d'annuler une réservation déjà annulée/terminée, (2) appliquer
+// la politique "annulation gratuite sous 48h avant le départ" (un admin peut
+// passer au-delà, pour gérer un litige au cas par cas), (3) déclencher un
+// vrai remboursement Stripe si un paiement "paye" existe, et ne basculer la
+// réservation en "annulee" QUE si ce remboursement a réussi — pour ne jamais
+// se retrouver avec une réservation annulée mais un client non remboursé.
 exports.cancelBooking = async (req, res) => {
   try {
     const booking = await Booking.findByPk(req.params.id);
@@ -174,16 +317,64 @@ exports.cancelBooking = async (req, res) => {
       });
     }
 
-    booking.statut = "annulee";
+    if (booking.statut === "annulee") {
+      return res.status(400).json({
+        message: "Cette réservation est déjà annulée",
+      });
+    }
 
+    if (booking.statut === "terminee") {
+      return res.status(400).json({
+        message: "Une réservation terminée ne peut plus être annulée",
+      });
+    }
+
+    const hoursUntilDeparture =
+      (new Date(booking.dateDebut) - new Date()) / (1000 * 60 * 60);
+
+    if (hoursUntilDeparture < 48 && req.user.role !== "admin") {
+      return res.status(400).json({
+        message:
+          "L'annulation gratuite n'est possible que jusqu'à 48h avant le départ. Contacte le propriétaire pour ce cas précis.",
+      });
+    }
+
+    const existingPayment = await Payment.findOne({
+      where: { bookingId: booking.id, statut: "paye" },
+    });
+
+    if (existingPayment) {
+      try {
+        if (existingPayment.methode === "paypal") {
+          await paypalService.refundCapture(existingPayment.referenceTransaction);
+        } else {
+          await stripe.refunds.create({
+            payment_intent: existingPayment.referenceTransaction,
+          });
+        }
+      } catch (refundError) {
+        return res.status(502).json({
+          message:
+            "Le remboursement a échoué, la réservation n'a pas été annulée : " +
+            refundError.message,
+        });
+      }
+
+      existingPayment.statut = "rembourse";
+      await existingPayment.save();
+    }
+
+    booking.statut = "annulee";
     await booking.save();
 
-    res.status(200).json({
-      message: "Réservation annulée",
+    return res.status(200).json({
+      message: existingPayment
+        ? "Réservation annulée et paiement remboursé"
+        : "Réservation annulée",
       booking,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       message: error.message,
     });
   }

@@ -26,8 +26,8 @@ exports.createCheckoutSession = async ({ booking }) => {
       userId: booking.userId,
     },
 
-    success_url: `${process.env.STRIPE_SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: process.env.STRIPE_CANCEL_URL,
+    success_url: `${process.env.FRONTEND_URL}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.FRONTEND_URL}/booking/cancel`,
   });
 
   return session;
