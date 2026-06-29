@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { Document, Boat } = require("../models");
+const { Document, Boat, User } = require("../models");
 const { isFileSignatureValid } = require("../utils/fileSignature");
 const { DOCUMENTS_DIR } = require("../middlewares/uploadMiddleware");
 
@@ -185,13 +185,27 @@ exports.getDocumentFile = async (req, res) => {
 
     const filePath = path.join(DOCUMENTS_DIR, document.url);
 
-    // Garde-fou anti-traversée de chemin : le fichier résolu doit rester
-    // strictement à l'intérieur du dossier des documents.
     if (!filePath.startsWith(DOCUMENTS_DIR) || !fs.existsSync(filePath)) {
       return res.status(404).json({
         message: "Fichier introuvable",
       });
     }
+
+    // Sans ces headers, le navigateur reçoit le fichier mais ne sait pas
+    // quoi en faire et affiche les bytes bruts au lieu d'ouvrir le PDF.
+    const ext = path.extname(document.url).toLowerCase();
+    const mimeTypes = {
+      ".pdf": "application/pdf",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+    };
+    const contentType = mimeTypes[ext] || "application/octet-stream";
+    res.setHeader("Content-Type", contentType);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${encodeURIComponent(document.nom)}${ext}"`
+    );
 
     return res.sendFile(filePath);
   } catch (error) {
@@ -243,6 +257,30 @@ exports.validateDocument = async (req, res) => {
     return res.status(500).json({
       message: error.message,
     });
+  }
+};
+
+// =========================
+// ADMIN — TOUS LES DOCUMENTS EN ATTENTE
+// =========================
+
+exports.getAllPendingDocuments = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Accès réservé à l'admin" });
+    }
+
+    const documents = await Document.findAll({
+      where: { statutValidation: "en_attente" },
+      include: [
+        { model: User, attributes: ["id", "nom", "prenom", "email", "role"] },
+      ],
+      order: [["createdAt", "ASC"]],
+    });
+
+    return res.status(200).json({ documents });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 

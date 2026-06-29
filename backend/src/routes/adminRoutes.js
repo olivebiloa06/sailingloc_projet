@@ -24,5 +24,6 @@ router.get("/documents", adminController.getAllDocuments);
 
 // Avis
 router.get("/reviews", adminController.getAllReviews);
+router.delete("/reviews/:id", adminController.deleteReview);
 
 module.exports = router;

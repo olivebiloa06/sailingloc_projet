@@ -38,6 +38,7 @@ const Booking = sequelize.define("Booking", {
   statut: {
     type: DataTypes.ENUM(
       "en_attente",
+      "acceptee",
       "confirmee",
       "annulee",
       "terminee"

@@ -1,26 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-
-// Logo "voilier minimaliste" — dans le rond prévu par le wireframe du CDC,
-// plutôt qu'un cercle gris vide. Dessiné à la main, pas de librairie d'icônes.
-function BoatMark({ className }) {
-  return (
-    <svg
-      viewBox="0 0 32 32"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1="16" y1="4" x2="16" y2="22" />
-      <path d="M16 6 L24 20 L16 20 Z" />
-      <path d="M5 24 Q16 30 27 24" />
-    </svg>
-  );
-}
+import BoatMark from "./BoatMark";
 
 // Reprend exactement les items du wireframe : Devenir propriétaire,
 // Inspiration, À propos. "Compte" est géré séparément (voir AccountLink)
@@ -28,6 +9,7 @@ function BoatMark({ className }) {
 // espace réservé visuel : pas d'i18n ni de multi-devise dans ce projet pour
 // l'instant, donc non cliquable.
 const NAV_LINKS = [
+  { to: "/", label: "Accueil" },
   { to: "/register?role=proprietaire", label: "Devenir propriétaire" },
   { to: "/inspiration", label: "Inspiration" },
   { to: "/a-propos", label: "À propos" },

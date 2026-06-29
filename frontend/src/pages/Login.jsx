@@ -7,7 +7,11 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = location.state?.from?.pathname || "/";
+  // On reconstruit pathname + search (pas juste pathname) : sinon, un
+  // utilisateur redirigé depuis /boats?localisation=Corse perdrait son
+  // filtre après connexion et retomberait sur /boats tout court.
+  const from = location.state?.from;
+  const redirectTo = from ? `${from.pathname}${from.search || ""}` : "/";
 
   const [form, setForm] = useState({ email: "", motDePasse: "" });
   const [errors, setErrors] = useState({});

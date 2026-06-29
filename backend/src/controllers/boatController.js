@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { Boat, User } = require("../models");
+const { Boat, User, Availability, Document } = require("../models");
 
 // Champs qu'un propriétaire est autorisé à modifier lui-même sur son bateau.
 // userId et statut sont volontairement exclus : un propriétaire ne doit pas
@@ -28,6 +28,25 @@ const PUBLIC_OWNER_ATTRIBUTES = ["id", "nom", "prenom"];
 // Ajouter un bateau
 exports.createBoat = async (req, res) => {
   try {
+    // Un admin peut toujours créer un bateau. Un propriétaire doit avoir au
+    // moins un document validé (pièce d'identité ou assurance) — sinon
+    // n'importe qui pourrait publier une annonce sans vérification d'identité.
+    if (req.user.role !== "admin") {
+      const validatedDoc = await Document.findOne({
+        where: {
+          userId: req.user.id,
+          statutValidation: "valide",
+        },
+      });
+
+      if (!validatedDoc) {
+        return res.status(403).json({
+          message:
+            "Vous ne pouvez pas publier de bateau tant que vos documents d'identité n'ont pas été validés par l'équipe SailingLoc. Rendez-vous dans votre espace personnel pour envoyer vos pièces.",
+        });
+      }
+    }
+
     const {
       nom,
       type,
@@ -143,6 +162,12 @@ exports.getAllBoats = async (req, res) => {
           model: User,
           attributes: PUBLIC_OWNER_ATTRIBUTES,
         },
+        {
+          model: Availability,
+          as: "availabilities",
+          where: { statut: "disponible" },
+          required: false,
+        },
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -170,6 +195,12 @@ exports.getBoatById = async (req, res) => {
         {
           model: User,
           attributes: PUBLIC_OWNER_ATTRIBUTES,
+        },
+        {
+          model: Availability,
+          as: "availabilities",
+          where: { statut: "disponible" },
+          required: false,
         },
       ],
     });

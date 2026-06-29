@@ -25,4 +25,12 @@ router.get(
   contractController.getContractById
 );
 
+// Télécharger le fichier PDF réel du contrat (vérification de propriété
+// dans le contrôleur, jamais de service statique)
+router.get(
+  "/:id/file",
+  verifyToken,
+  contractController.getContractFile
+);
+
 module.exports = router;

@@ -21,6 +21,18 @@ router.post(
   paymentController.createStripeSession
 );
 
+router.post(
+  "/paypal/create-order/:bookingId",
+  verifyToken,
+  paymentController.createPaypalOrder
+);
+
+router.post(
+  "/paypal/capture/:orderId",
+  verifyToken,
+  paymentController.capturePaypalOrder
+);
+
 router.get(
   "/my-payments",
   verifyToken,

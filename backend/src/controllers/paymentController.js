@@ -1,6 +1,8 @@
 const { Payment, Booking, Boat, User } = require("../models");
 const { sendPaymentConfirmation } = require("../services/emailService");
 const { createCheckoutSession } = require("../services/stripeService");
+const paypalService = require("../services/paypalService");
+const contractController = require("./contractController");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // =========================
@@ -68,6 +70,12 @@ exports.markBookingAsPaidManually = async (req, res) => {
     booking.statut = "confirmee";
     await booking.save();
 
+    try {
+      await contractController.generateContractForBooking(bookingId);
+    } catch (contractError) {
+      console.error("Génération du contrat échouée pour la réservation", bookingId, contractError);
+    }
+
     if (booking.User && booking.User.email) {
       await sendPaymentConfirmation(booking.User.email, payment);
     }
@@ -130,13 +138,25 @@ exports.stripeWebhook = async (req, res) => {
           montant: booking.montantTotal,
           methode: "stripe",
           statut: "paye",
-          referenceTransaction: session.payment_intent,
+          // Filet de sécurité : session.payment_intent doit normalement
+          // toujours être présent sur un événement checkout.session.completed
+          // en mode "payment", mais on ne veut jamais se retrouver avec une
+          // référence de transaction nulle — on retombe sur l'ID de session
+          // Stripe lui-même, qui permet toujours de retrouver le paiement
+          // dans le Dashboard Stripe.
+          referenceTransaction: session.payment_intent || session.id,
           datePaiement: new Date(),
         });
       }
 
       booking.statut = "confirmee";
       await booking.save();
+
+      try {
+        await contractController.generateContractForBooking(bookingId);
+      } catch (contractError) {
+        console.error("Génération du contrat échouée pour la réservation", bookingId, contractError);
+      }
     }
 
     return res.status(200).json({
@@ -171,9 +191,12 @@ exports.createStripeSession = async (req, res) => {
       });
     }
 
-    if (booking.statut === "confirmee") {
+    // Le paiement est autorisé dès que la réservation existe (en_attente)
+    // ou a été explicitement acceptée (acceptee). Bloqué si déjà confirmée,
+    // annulée ou terminée.
+    if (!["en_attente", "acceptee"].includes(booking.statut)) {
       return res.status(400).json({
-        message: "Cette réservation est déjà confirmée",
+        message: "Cette réservation n'est pas en attente de paiement.",
       });
     }
 
@@ -217,6 +240,120 @@ exports.getMyPayments = async (req, res) => {
     return res.status(200).json({
       message: "Paiements récupérés avec succès",
       payments,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// =========================
+// PAYPAL — CRÉER UNE COMMANDE
+// =========================
+
+exports.createPaypalOrder = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findByPk(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({
+        message: "Réservation introuvable",
+      });
+    }
+
+    if (booking.userId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Accès interdit",
+      });
+    }
+
+    if (!["en_attente", "acceptee"].includes(booking.statut)) {
+      return res.status(400).json({
+        message: "Cette réservation n'est pas en attente de paiement.",
+      });
+    }
+
+    const order = await paypalService.createOrder({ booking });
+    const approveLink = (order.links || []).find((link) => link.rel === "approve");
+
+    return res.status(200).json({
+      message: "Commande PayPal créée avec succès",
+      orderId: order.id,
+      url: approveLink ? approveLink.href : null,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// =========================
+// PAYPAL — CAPTURER LE PAIEMENT APRÈS APPROBATION
+// =========================
+// Pas de webhook ici (contrairement à Stripe) : sur un parcours redirect
+// simple, PayPal renvoie l'utilisateur sur le site avec ?token=ORDER_ID, et
+// c'est CET appel explicite, déclenché par le frontend à ce retour, qui
+// capture réellement l'argent et enregistre le paiement.
+
+exports.capturePaypalOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const capture = await paypalService.captureOrder(orderId);
+
+    const bookingId = capture.purchase_units?.[0]?.custom_id;
+    const captureId =
+      capture.purchase_units?.[0]?.payments?.captures?.[0]?.id || orderId;
+
+    if (!bookingId) {
+      return res.status(400).json({
+        message: "Identifiant de réservation manquant dans la réponse PayPal",
+      });
+    }
+
+    const booking = await Booking.findByPk(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({
+        message: "Réservation introuvable",
+      });
+    }
+
+    if (booking.userId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Accès interdit",
+      });
+    }
+
+    const existingPayment = await Payment.findOne({ where: { bookingId } });
+
+    if (!existingPayment) {
+      await Payment.create({
+        bookingId,
+        montant: booking.montantTotal,
+        methode: "paypal",
+        statut: "paye",
+        referenceTransaction: captureId,
+        datePaiement: new Date(),
+      });
+
+      booking.statut = "confirmee";
+      await booking.save();
+
+      try {
+        await contractController.generateContractForBooking(bookingId);
+      } catch (contractError) {
+        console.error("Génération du contrat échouée pour la réservation", bookingId, contractError);
+      }
+    }
+
+    return res.status(200).json({
+      message: "Paiement PayPal confirmé",
+      booking,
     });
   } catch (error) {
     return res.status(500).json({

@@ -158,3 +158,16 @@ exports.getAllReviews = async (req, res) => {
     });
   }
 };
+// Supprimer un avis (modération)
+exports.deleteReview = async (req, res) => {
+  try {
+    const review = await Review.findByPk(req.params.id);
+    if (!review) {
+      return res.status(404).json({ message: "Avis introuvable" });
+    }
+    await review.destroy();
+    return res.status(200).json({ message: "Avis supprimé" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
