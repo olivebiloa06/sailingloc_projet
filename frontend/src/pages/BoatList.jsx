@@ -89,6 +89,11 @@ function BoatCard({ boat }) {
 }
 
 function filtersFromParams(searchParams) {
+  // La recherche du hero n'envoie qu'une seule "date" (pas encore de plage) :
+  // on la reprend comme valeur par défaut pour dateDebut/dateFin si la liste
+  // n'a pas elle-même de plage explicite dans l'URL.
+  const singleDate = searchParams.get("date") || "";
+
   return {
     localisation: searchParams.get("localisation") || "",
     type: searchParams.get("type") || "",
@@ -96,6 +101,8 @@ function filtersFromParams(searchParams) {
     maxPrice: searchParams.get("maxPrice") || "",
     capacite: searchParams.get("capacite") || "",
     avecSkipper: searchParams.get("avecSkipper") === "true",
+    dateDebut: searchParams.get("dateDebut") || singleDate,
+    dateFin: searchParams.get("dateFin") || singleDate,
   };
 }
 
@@ -107,6 +114,8 @@ function buildParams(filters) {
   if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
   if (filters.capacite) params.set("capacite", filters.capacite);
   if (filters.avecSkipper) params.set("avecSkipper", "true");
+  if (filters.dateDebut) params.set("dateDebut", filters.dateDebut);
+  if (filters.dateFin) params.set("dateFin", filters.dateFin);
   return params;
 }
 
@@ -188,6 +197,30 @@ export default function BoatList() {
               placeholder="Ville, région..."
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-navy">
+              Dates
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={filters.dateDebut}
+                onChange={(e) => handleChange("dateDebut", e.target.value)}
+                aria-label="Date de début"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
+              />
+              <span className="text-gray-400">—</span>
+              <input
+                type="date"
+                value={filters.dateFin}
+                min={filters.dateDebut || undefined}
+                onChange={(e) => handleChange("dateFin", e.target.value)}
+                aria-label="Date de fin"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
+              />
+            </div>
           </div>
 
           <div>
