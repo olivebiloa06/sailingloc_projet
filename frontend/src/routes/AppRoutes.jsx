@@ -6,6 +6,9 @@ import Home from "../pages/Home";
 import BoatList from "../pages/BoatList";
 import BoatDetail from "../pages/BoatDetail";
 import Login from "../pages/Login";
+import ForgotPassword from "../pages/ForgotPassword";
+import ResetPassword from "../pages/ResetPassword";
+import Inspiration from "../pages/Inspiration";
 import Register from "../pages/Register";
 import Account from "../pages/Account";
 import MyBookings from "../pages/MyBookings";
@@ -47,6 +50,9 @@ function AppRoutes() {
         {/* Login/Register restent en plein écran, sans header/footer du site,
             pour garder le focus sur le formulaire. */}
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/inspiration" element={<Layout><Inspiration /></Layout>} />
         <Route path="/register" element={<Register />} />
 
         <Route

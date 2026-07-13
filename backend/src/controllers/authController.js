@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { User, RefreshToken } = require("../models");
+const { sendEmail } = require("../services/emailService");
 const {
   ACCESS_TOKEN_TTL,
   REFRESH_COOKIE_NAME,
@@ -293,5 +295,122 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({
       message: error.message,
     });
+  }
+};
+
+// =========================
+// DEMANDE DE RÉINITIALISATION DE MOT DE PASSE
+// =========================
+// On génère un token aléatoire (UUID hex) valable 1 heure, on le stocke haché
+// en base (pour ne pas exposer le token brut si la base est compromise), et
+// on envoie le lien avec le token BRUT par email — seul l'utilisateur qui
+// reçoit l'email peut l'utiliser.
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "L'adresse email est requise." });
+    }
+
+    const user = await User.unscoped().findOne({ where: { email } });
+
+    // On retourne toujours le même message, qu'un compte existe ou non :
+    // évite de confirmer à un attaquant qu'une adresse est inscrite.
+    if (!user) {
+      return res.status(200).json({
+        message:
+          "Si un compte correspond à cet email, un lien de réinitialisation vient d'être envoyé.",
+      });
+    }
+
+    const tokenBrut = crypto.randomBytes(32).toString("hex");
+    const tokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
+
+    await user.update({
+      resetPasswordToken: tokenBrut,
+      resetPasswordExpires: tokenExpires,
+    });
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${tokenBrut}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "SailingLoc — Réinitialisation de ton mot de passe",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto;">
+          <h2 style="color: #0A2A43;">Réinitialisation de mot de passe</h2>
+          <p>Bonjour ${user.prenom},</p>
+          <p>Tu as demandé à réinitialiser ton mot de passe SailingLoc.<br>
+          Clique sur le bouton ci-dessous — ce lien est valable <strong>1 heure</strong>.</p>
+          <a href="${resetUrl}"
+             style="display:inline-block; margin: 20px 0; padding: 12px 28px;
+                    background: #0A2A43; color: #fff; text-decoration: none;
+                    border-radius: 8px; font-weight: bold;">
+            Réinitialiser mon mot de passe
+          </a>
+          <p style="color: #666; font-size: 13px;">
+            Si tu n'es pas à l'origine de cette demande, ignore cet email —
+            ton mot de passe actuel reste inchangé.
+          </p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+          <p style="color: #aaa; font-size: 12px;">SailingLoc — Agence Pandawan © 2026</p>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({
+      message:
+        "Si un compte correspond à cet email, un lien de réinitialisation vient d'être envoyé.",
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// =========================
+// CONFIRMATION RÉINITIALISATION MOT DE PASSE
+// =========================
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, motDePasse } = req.body;
+
+    if (!token || !motDePasse) {
+      return res.status(400).json({ message: "Token et nouveau mot de passe requis." });
+    }
+
+    if (motDePasse.length < 8) {
+      return res.status(400).json({
+        message: "Le mot de passe doit contenir au moins 8 caractères.",
+      });
+    }
+
+    const user = await User.unscoped().findOne({
+      where: { resetPasswordToken: token },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Lien invalide ou déjà utilisé." });
+    }
+
+    if (new Date() > new Date(user.resetPasswordExpires)) {
+      return res.status(400).json({
+        message: "Ce lien a expiré. Fais une nouvelle demande de réinitialisation.",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(motDePasse, 10);
+
+    await user.update({
+      motDePasse: hashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+    });
+
+    return res.status(200).json({
+      message: "Mot de passe réinitialisé avec succès. Tu peux maintenant te connecter.",
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };

@@ -155,6 +155,8 @@ RefreshToken.belongsTo(User, {
   foreignKey: "userId",
 });
 
+const Article = require("./Article");
+
 module.exports = {
   sequelize,
   User,
@@ -166,4 +168,5 @@ module.exports = {
   Contract,
   Document,
   RefreshToken,
+  Article,
 };

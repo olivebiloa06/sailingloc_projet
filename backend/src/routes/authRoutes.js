@@ -32,9 +32,25 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Limite anti-spam sur le reset password : un attaquant ne doit pas pouvoir
+// déclencher des milliers d'emails depuis la même IP.
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    message: "Trop de demandes de réinitialisation. Réessayez dans 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Auth publique
 router.post("/register", registerLimiter, authController.register);
 router.post("/login", loginLimiter, authController.login);
+
+// Réinitialisation de mot de passe
+router.post("/forgot-password", resetLimiter, authController.forgotPassword);
+router.post("/reset-password", authController.resetPassword);
 
 // Renouvellement de l'access token à partir du refresh token (cookie HttpOnly)
 router.post("/refresh", authController.refresh);
