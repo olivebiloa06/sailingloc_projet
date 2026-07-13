@@ -33,6 +33,14 @@ const User = sequelize.define(
       type: DataTypes.ENUM("locataire", "proprietaire", "admin"),
       defaultValue: "locataire",
     },
+    resetPasswordToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     defaultScope: {

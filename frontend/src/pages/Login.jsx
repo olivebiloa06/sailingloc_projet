@@ -127,6 +127,12 @@ export default function Login() {
               >
                 Mot de passe
               </label>
+              <Link
+                to="/forgot-password"
+                className="float-right text-xs text-sky hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
               <input
                 id="motDePasse"
                 name="motDePasse"

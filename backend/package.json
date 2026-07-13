@@ -9,7 +9,8 @@
     "start": "node src/server.js",
     "seed": "node src/seeders/seed.js",
     "seed:images": "node src/seeders/seedImages.js",
-    "make-available": "node src/seeders/makeAllBoatsAvailable.js"
+    "make-available": "node src/seeders/makeAllBoatsAvailable.js",
+    "seed:articles": "node src/seeders/seedArticles.js"
   },
   "keywords": [],
   "author": "",

@@ -3,6 +3,220 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
+const CATEGORIES = [
+  "Actualités nautiques",
+  "Guide de voyage",
+  "Conseils de navigation",
+  "Destination tendance",
+];
+
+const EMPTY_FORM = {
+  titre: "",
+  categorie: "Actualités nautiques",
+  extrait: "",
+  contenu: "",
+  lienBoats: "/boats",
+  tempsLecture: "5 min",
+  publie: false,
+};
+
+function ArticlesPanel({ articles, onRefresh }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editingArticle, setEditingArticle] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const openNew = () => { setEditingArticle(null); setForm(EMPTY_FORM); setShowForm(true); };
+  const openEdit = (a) => {
+    setEditingArticle(a);
+    setForm({
+      titre: a.titre,
+      categorie: a.categorie,
+      extrait: a.extrait,
+      contenu: a.contenu,
+      lienBoats: a.lienBoats || "/boats",
+      tempsLecture: a.tempsLecture || "5 min",
+      publie: a.publie,
+    });
+    setShowForm(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setFormError("");
+    if (!form.titre || !form.extrait || !form.contenu) {
+      setFormError("Titre, extrait et contenu sont obligatoires.");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (editingArticle) {
+        await api.put(`/articles/${editingArticle.id}`, form);
+      } else {
+        await api.post("/articles", form);
+      }
+      setShowForm(false);
+      onRefresh();
+    } catch (err) {
+      setFormError(err.response?.data?.message || "Erreur lors de l'enregistrement.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Supprimer cet article définitivement ?")) return;
+    await api.delete(`/articles/${id}`);
+    onRefresh();
+  };
+
+  const togglePublish = async (a) => {
+    await api.put(`/articles/${a.id}`, { publie: !a.publie });
+    onRefresh();
+  };
+
+  return (
+    <div className="mt-6 space-y-4">
+      {showForm ? (
+        <form onSubmit={handleSave} className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+          <h3 className="font-heading text-base font-semibold text-navy">
+            {editingArticle ? "Modifier l'article" : "Nouvel article"}
+          </h3>
+          {formError && <p className="text-xs text-red-600">{formError}</p>}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="mb-1 block text-xs font-medium text-navy">Titre</label>
+              <input
+                type="text"
+                required
+                value={form.titre}
+                onChange={(e) => setForm((p) => ({ ...p, titre: e.target.value }))}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-navy">Catégorie</label>
+              <select
+                value={form.categorie}
+                onChange={(e) => setForm((p) => ({ ...p, categorie: e.target.value }))}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              >
+                {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-navy">Temps de lecture</label>
+              <input
+                type="text"
+                value={form.tempsLecture}
+                onChange={(e) => setForm((p) => ({ ...p, tempsLecture: e.target.value }))}
+                placeholder="5 min"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="mb-1 block text-xs font-medium text-navy">Lien bateaux (filtre)</label>
+              <input
+                type="text"
+                value={form.lienBoats}
+                onChange={(e) => setForm((p) => ({ ...p, lienBoats: e.target.value }))}
+                placeholder="/boats?localisation=Corse"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="mb-1 block text-xs font-medium text-navy">Extrait (résumé court)</label>
+              <textarea
+                required
+                rows={2}
+                value={form.extrait}
+                onChange={(e) => setForm((p) => ({ ...p, extrait: e.target.value }))}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="mb-1 block text-xs font-medium text-navy">Contenu complet</label>
+              <textarea
+                required
+                rows={8}
+                value={form.contenu}
+                onChange={(e) => setForm((p) => ({ ...p, contenu: e.target.value }))}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono"
+                placeholder="Écris le contenu de l'article ici..."
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={form.publie}
+              onChange={(e) => setForm((p) => ({ ...p, publie: e.target.checked }))}
+            />
+            Publier immédiatement (visible sur la page Inspiration)
+          </label>
+
+          <div className="flex gap-2">
+            <button type="submit" disabled={saving}
+              className="rounded-lg bg-navy px-5 py-2 text-sm font-semibold text-white hover:bg-navy-light disabled:opacity-50">
+              {saving ? "Enregistrement..." : "Enregistrer"}
+            </button>
+            <button type="button" onClick={() => setShowForm(false)}
+              className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600">
+              Annuler
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={openNew}
+          className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-light"
+        >
+          + Nouvel article
+        </button>
+      )}
+
+      {articles.length === 0 && !showForm && (
+        <p className="text-sm text-gray-500">Aucun article. Crée ton premier article ci-dessus.</p>
+      )}
+
+      <div className="space-y-3">
+        {articles.map((a) => (
+          <div key={a.id} className="flex items-start justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-sky">{a.categorie}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${a.publie ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  {a.publie ? "Publié" : "Brouillon"}
+                </span>
+              </div>
+              <p className="mt-1 font-heading text-sm font-semibold text-navy">{a.titre}</p>
+              <p className="mt-0.5 text-xs text-gray-400">⏱ {a.tempsLecture} · lien : {a.lienBoats}</p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <button onClick={() => togglePublish(a)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${a.publie ? "border-amber-300 text-amber-600 hover:border-amber-400" : "border-green-300 text-green-600 hover:border-green-400"}`}>
+                {a.publie ? "Dépublier" : "Publier"}
+              </button>
+              <button onClick={() => openEdit(a)}
+                className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy">
+                Modifier
+              </button>
+              <button onClick={() => handleDelete(a.id)}
+                className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:border-red-400">
+                Supprimer
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const STATUS_LABELS_DOC = {
   en_attente: "En attente",
   valide: "Validé",
@@ -30,6 +244,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [articles, setArticles] = useState([]);
   const [tab, setTab] = useState("kpi");
   const [loading, setLoading] = useState(true);
 
@@ -41,12 +256,14 @@ export default function AdminDashboard() {
       api.get("/admin/bookings").catch(() => ({ data: { bookings: [] } })),
       api.get("/admin/payments").catch(() => ({ data: { payments: [] } })),
       api.get("/admin/reviews").catch(() => ({ data: { reviews: [] } })),
-    ]).then(([dRes, uRes, bRes, pRes, rRes]) => {
+      api.get("/articles/admin/all").catch(() => ({ data: { articles: [] } })),
+    ]).then(([dRes, uRes, bRes, pRes, rRes, aRes]) => {
       setPendingDocs(dRes.data.documents || []);
       const allUsers = uRes.data.users || [];
       setUsers(allUsers);
       setPayments(pRes.data.payments || []);
       setReviews(rRes.data.reviews || []);
+      setArticles(aRes.data.articles || []);
 
       const allBookings = bRes.data.bookings || [];
       const confirmed = allBookings.filter((b) => b.statut === "confirmee");
@@ -102,6 +319,7 @@ export default function AdminDashboard() {
   const TABS = [
     { key: "kpi", label: "Tableau de bord" },
     { key: "docs", label: `Documents${stats?.pendingDocs > 0 ? ` (${stats.pendingDocs})` : ""}` },
+    { key: "articles", label: "Articles" },
     { key: "payments", label: "Transactions" },
     { key: "reviews", label: "Avis" },
     { key: "users", label: "Utilisateurs" },
@@ -204,6 +422,11 @@ export default function AdminDashboard() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Onglet Articles */}
+      {!loading && tab === "articles" && (
+        <ArticlesPanel articles={articles} onRefresh={load} />
       )}
 
       {/* Onglet Transactions */}
