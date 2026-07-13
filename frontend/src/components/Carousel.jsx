@@ -27,7 +27,7 @@ export default function Carousel({ items, renderItem }) {
       <div
         ref={trackRef}
         onScroll={handleScroll}
-        className="flex gap-6 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-6 overflow-x-auto overflow-y-visible px-1 pb-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ scrollSnapType: "x mandatory" }}
       >
         {items.map((item, i) => (

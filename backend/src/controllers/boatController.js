@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { Boat, User, Availability, Document } = require("../models");
+const { Boat, User, Availability, Document, Booking } = require("../models");
 
 // Champs qu'un propriétaire est autorisé à modifier lui-même sur son bateau.
 // userId et statut sont volontairement exclus : un propriétaire ne doit pas
@@ -99,6 +99,8 @@ exports.getAllBoats = async (req, res) => {
       capacite,
       avecSkipper,
       search,
+      dateDebut,
+      dateFin,
     } = req.query;
 
     const filters = {};
@@ -155,6 +157,52 @@ exports.getAllBoats = async (req, res) => {
       ];
     }
 
+    // Par défaut (pas de recherche par date), on renvoie toutes les fenêtres
+    // "disponible" du bateau — c'est ce qu'affiche la carte bateau côté
+    // frontend. Si une recherche par date est active, on restreint cette
+    // même liste aux fenêtres qui couvrent réellement la période demandée,
+    // pour que la carte affiche la bonne période plutôt que la première
+    // disponibilité du bateau (qui peut n'avoir aucun rapport avec la
+    // recherche).
+    const availabilityWhere = { statut: "disponible" };
+
+    if (dateDebut && dateFin) {
+      const start = new Date(dateDebut);
+      const end = new Date(dateFin);
+
+      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end > start) {
+        availabilityWhere.dateDebut = { [Op.lte]: start };
+        availabilityWhere.dateFin = { [Op.gte]: end };
+
+        const availableBoats = await Availability.findAll({
+          attributes: ["boatId"],
+          where: {
+            statut: "disponible",
+            dateDebut: { [Op.lte]: start },
+            dateFin: { [Op.gte]: end },
+          },
+          raw: true,
+        });
+
+        const overlappingBookings = await Booking.findAll({
+          attributes: ["boatId"],
+          where: {
+            statut: { [Op.ne]: "annulee" },
+            dateDebut: { [Op.lt]: end },
+            dateFin: { [Op.gt]: start },
+          },
+          raw: true,
+        });
+
+        const bookedBoatIds = new Set(overlappingBookings.map((b) => b.boatId));
+        const matchingBoatIds = availableBoats
+          .map((a) => a.boatId)
+          .filter((id) => !bookedBoatIds.has(id));
+
+        filters.id = { [Op.in]: matchingBoatIds };
+      }
+    }
+
     const boats = await Boat.findAll({
       where: filters,
       include: [
@@ -165,7 +213,7 @@ exports.getAllBoats = async (req, res) => {
         {
           model: Availability,
           as: "availabilities",
-          where: { statut: "disponible" },
+          where: availabilityWhere,
           required: false,
         },
       ],
