@@ -1,34 +1,12 @@
 const express = require("express");
 const router = express.Router();
-
 const reviewController = require("../controllers/reviewController");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
-// Créer un avis
-router.post(
-  "/",
-  verifyToken,
-  reviewController.createReview
-);
+// Public — utilisé sur la fiche bateau et pour la note sur les cartes
+router.get("/boat/:boatId", reviewController.getReviewsByBoat);
 
-// Voir les avis d’un bateau
-router.get(
-  "/boat/:boatId",
-  reviewController.getReviewsByBoat
-);
-
-// Voir mes avis
-router.get(
-  "/my-reviews",
-  verifyToken,
-  reviewController.getMyReviews
-);
-
-// Supprimer un avis
-router.delete(
-  "/:id",
-  verifyToken,
-  reviewController.deleteReview
-);
+// Authentifié — laisser un avis après une réservation confirmée
+router.post("/", verifyToken, reviewController.createReview);
 
 module.exports = router;

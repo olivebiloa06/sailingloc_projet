@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { Boat, User, Availability, Document, Booking } = require("../models");
+const { Boat, User, Availability, Document, Review, sequelize } = require("../models");
 
 // Champs qu'un propriétaire est autorisé à modifier lui-même sur son bateau.
 // userId et statut sont volontairement exclus : un propriétaire ne doit pas
@@ -99,8 +99,6 @@ exports.getAllBoats = async (req, res) => {
       capacite,
       avecSkipper,
       search,
-      dateDebut,
-      dateFin,
     } = req.query;
 
     const filters = {};
@@ -157,52 +155,6 @@ exports.getAllBoats = async (req, res) => {
       ];
     }
 
-    // Par défaut (pas de recherche par date), on renvoie toutes les fenêtres
-    // "disponible" du bateau — c'est ce qu'affiche la carte bateau côté
-    // frontend. Si une recherche par date est active, on restreint cette
-    // même liste aux fenêtres qui couvrent réellement la période demandée,
-    // pour que la carte affiche la bonne période plutôt que la première
-    // disponibilité du bateau (qui peut n'avoir aucun rapport avec la
-    // recherche).
-    const availabilityWhere = { statut: "disponible" };
-
-    if (dateDebut && dateFin) {
-      const start = new Date(dateDebut);
-      const end = new Date(dateFin);
-
-      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end > start) {
-        availabilityWhere.dateDebut = { [Op.lte]: start };
-        availabilityWhere.dateFin = { [Op.gte]: end };
-
-        const availableBoats = await Availability.findAll({
-          attributes: ["boatId"],
-          where: {
-            statut: "disponible",
-            dateDebut: { [Op.lte]: start },
-            dateFin: { [Op.gte]: end },
-          },
-          raw: true,
-        });
-
-        const overlappingBookings = await Booking.findAll({
-          attributes: ["boatId"],
-          where: {
-            statut: { [Op.ne]: "annulee" },
-            dateDebut: { [Op.lt]: end },
-            dateFin: { [Op.gt]: start },
-          },
-          raw: true,
-        });
-
-        const bookedBoatIds = new Set(overlappingBookings.map((b) => b.boatId));
-        const matchingBoatIds = availableBoats
-          .map((a) => a.boatId)
-          .filter((id) => !bookedBoatIds.has(id));
-
-        filters.id = { [Op.in]: matchingBoatIds };
-      }
-    }
-
     const boats = await Boat.findAll({
       where: filters,
       include: [
@@ -213,18 +165,42 @@ exports.getAllBoats = async (req, res) => {
         {
           model: Availability,
           as: "availabilities",
-          where: availabilityWhere,
+          where: { statut: "disponible" },
           required: false,
         },
       ],
       order: [["createdAt", "DESC"]],
     });
 
+    // Note moyenne calculée séparément pour éviter les problèmes de GROUP BY
+    // avec Sequelize sur certaines versions de PostgreSQL.
+    const boatIds = boats.map((b) => b.id);
+    const reviews = await Review.findAll({
+      where: { boatId: { [Op.in]: boatIds } },
+      attributes: ["boatId", "note"],
+    });
+
+    const reviewMap = {};
+    reviews.forEach((r) => {
+      if (!reviewMap[r.boatId]) reviewMap[r.boatId] = [];
+      reviewMap[r.boatId].push(r.note);
+    });
+
     return res.status(200).json({
       message: "Liste des bateaux récupérée avec succès",
       total: boats.length,
       filters: req.query,
-      boats,
+      boats: boats.map((b) => {
+        const notes = reviewMap[b.id] || [];
+        const averageRating = notes.length
+          ? Math.round((notes.reduce((s, n) => s + n, 0) / notes.length) * 10) / 10
+          : null;
+        return {
+          ...b.toJSON(),
+          averageRating,
+          reviewCount: (reviewMap[b.id] || []).length,
+        };
+      }),
     });
   } catch (error) {
     return res.status(500).json({

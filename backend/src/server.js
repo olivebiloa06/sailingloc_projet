@@ -1,6 +1,8 @@
 require("dotenv").config();
 
 const express = require("express");
+const { createServer } = require("http");
+const { Server } = require("socket.io");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const path = require("path");
@@ -25,10 +27,44 @@ const articleRoutes = require("./routes/articleRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const messageRoutes = require("./routes/messageRoutes");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
+const favoriteRoutes = require("./routes/favoriteRoutes");
 
 const app = express();
+const httpServer = createServer(app);
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
+  },
+});
+
+// Socket.io — gestion des rooms de conversation
+io.on("connection", (socket) => {
+  // Le client rejoint la room de sa conversation dès qu'il l'ouvre
+  socket.on("join_conversation", (conversationId) => {
+    socket.join(`conversation:${conversationId}`);
+  });
+
+  socket.on("leave_conversation", (conversationId) => {
+    socket.leave(`conversation:${conversationId}`);
+  });
+
+  // Indicateur "en train d'écrire..."
+  socket.on("typing", ({ conversationId, prenom }) => {
+    socket.to(`conversation:${conversationId}`).emit("typing", { prenom });
+  });
+
+  socket.on("stop_typing", ({ conversationId }) => {
+    socket.to(`conversation:${conversationId}`).emit("stop_typing");
+  });
+});
+
+// Rend io accessible dans les controllers via req.app.get("io")
+app.set("io", io);
 
 app.use(helmet());
 app.use(morgan("dev"));
@@ -63,7 +99,7 @@ app.use(cookieParser());
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   message: {
     message: "Trop de requêtes, veuillez réessayer plus tard.",
   },
@@ -94,9 +130,11 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/articles", articleRoutes);
+app.use("/api/conversations", messageRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/favorites", favoriteRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Gestion centralisée des routes inconnues et des erreurs non interceptées,
@@ -136,8 +174,8 @@ const startServer = async () => {
       console.log("Tables synchronisées avec PostgreSQL (mode développement).");
     }
 
-    app.listen(PORT, () => {
-      console.log(`Serveur lancé sur le port ${PORT}`);
+    httpServer.listen(PORT, () => {
+      console.log(`Serveur lancé sur le port ${PORT} (HTTP + WebSocket)`);
     });
   } catch (error) {
     console.error("Erreur de connexion PostgreSQL :", error.message);
