@@ -10,11 +10,11 @@ import BoatMark from "./BoatMark";
 // l'instant, donc non cliquable.
 const NAV_LINKS = [
   { to: "/", label: "Accueil" },
+  { to: "/boats", label: "Bateaux" },
   { to: "/register?role=proprietaire", label: "Devenir propriétaire" },
   { to: "/inspiration", label: "Inspiration" },
   { to: "/a-propos", label: "À propos" },
 ];
-
 function AccountLink({ className }) {
   const { user } = useAuth();
 
