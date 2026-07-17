@@ -10,9 +10,14 @@ const { authorizeRoles } = require("../middlewares/roleMiddleware");
 // Le rate limit global de server.js (100 req/15min sur toute l'API) ne suffit
 // pas à freiner le brute-force sur /login. Le cahier des charges (page 92)
 // prévoit explicitement une limite de 5 tentatives de connexion / 15 minutes.
+// En développement, les limites sont très souples pour éviter de bloquer les
+// tests. En production (NODE_ENV=production), on revient à des valeurs strictes
+// conformes au CDC (5 tentatives / 15 min sur /login).
+const isDev = process.env.NODE_ENV !== "production";
+
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: isDev ? 200 : 5,
   message: {
     message: "Trop de tentatives de connexion. Réessayez dans 15 minutes.",
   },
@@ -20,11 +25,9 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Limite un peu plus large sur l'inscription (anti-spam de comptes), sans
-// pénaliser un utilisateur qui corrige une faute de frappe dans son formulaire.
 const registerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: isDev ? 200 : 10,
   message: {
     message: "Trop de tentatives d'inscription. Réessayez dans 15 minutes.",
   },
@@ -32,11 +35,9 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Limite anti-spam sur le reset password : un attaquant ne doit pas pouvoir
-// déclencher des milliers d'emails depuis la même IP.
 const resetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: isDev ? 200 : 5,
   message: {
     message: "Trop de demandes de réinitialisation. Réessayez dans 15 minutes.",
   },

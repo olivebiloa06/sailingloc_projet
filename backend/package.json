@@ -9,8 +9,7 @@
     "start": "node src/server.js",
     "seed": "node src/seeders/seed.js",
     "seed:images": "node src/seeders/seedImages.js",
-    "make-available": "node src/seeders/makeAllBoatsAvailable.js",
-    "seed:articles": "node src/seeders/seedArticles.js"
+    "make-available": "node src/seeders/makeAllBoatsAvailable.js"
   },
   "keywords": [],
   "author": "",
@@ -28,11 +27,12 @@
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.7",
+    "pdfkit": "^0.19.1",
     "pg": "^8.20.0",
     "pg-hstore": "^2.3.4",
-    "pdfkit": "^0.19.1",
     "sequelize": "^6.37.8",
     "sharp": "^0.35.2",
+    "socket.io": "^4.8.3",
     "stripe": "^22.1.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"

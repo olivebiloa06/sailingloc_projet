@@ -3,6 +3,15 @@ import { Link, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 import { resolveImageUrl } from "../utils/assets";
 import BoatMark from "../components/BoatMark";
+import FavoriteButton from "../components/FavoriteButton";
+
+// Images de fallback pour les bateaux sans photo uploadée
+import fallback1 from "../assets/bergadder-ship-10038606_1920.jpg";
+import fallback2 from "../assets/veverkolog-ship-8308680_1920.jpg";
+import fallback3 from "../assets/pexels-asadphoto-12877369.jpg";
+import fallback4 from "../assets/baloc.jpg";
+
+const FALLBACKS = [fallback1, fallback2, fallback3, fallback4];
 
 const BOAT_TYPES = [
   { value: "", label: "Tous les types" },
@@ -32,27 +41,27 @@ function availabilityLabel(boat) {
   return `Disponible du ${formatShortDate(first.dateDebut)} au ${formatShortDate(first.dateFin)}`;
 }
 
-function BoatCard({ boat }) {
+function BoatCard({ boat, index = 0 }) {
   const image = resolveImageUrl(boat.imageUrl);
+  // Si pas d'image uploadée, on utilise un fallback rotatif depuis les assets
+  const fallbackImg = FALLBACKS[index % FALLBACKS.length];
   const availability = availabilityLabel(boat);
 
   return (
     <Link
       to={`/boats/${boat.id}`}
-      className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
+      className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-navy/10 animate-fade-up"
     >
       <div className="relative h-44 overflow-hidden bg-gradient-to-br from-navy to-sky">
-        {image ? (
-          <img
-            src={image}
-            alt={boat.nom}
-            className="h-full w-full object-cover transition group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <BoatMark className="h-10 w-10 text-white/40" />
-          </div>
-        )}
+        <img
+          src={image || fallbackImg}
+          alt={boat.nom}
+          className="h-full w-full object-cover transition group-hover:scale-105"
+          onError={(e) => { e.target.src = fallbackImg; }}
+        />
+
+        {/* Bouton favori — coin haut droit */}
+        <FavoriteButton boatId={boat.id} className="absolute right-2 top-2" />
 
         {boat.avecSkipper && (
           <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-navy">
@@ -89,11 +98,6 @@ function BoatCard({ boat }) {
 }
 
 function filtersFromParams(searchParams) {
-  // La recherche du hero n'envoie qu'une seule "date" (pas encore de plage) :
-  // on la reprend comme valeur par défaut pour dateDebut/dateFin si la liste
-  // n'a pas elle-même de plage explicite dans l'URL.
-  const singleDate = searchParams.get("date") || "";
-
   return {
     localisation: searchParams.get("localisation") || "",
     type: searchParams.get("type") || "",
@@ -101,8 +105,6 @@ function filtersFromParams(searchParams) {
     maxPrice: searchParams.get("maxPrice") || "",
     capacite: searchParams.get("capacite") || "",
     avecSkipper: searchParams.get("avecSkipper") === "true",
-    dateDebut: searchParams.get("dateDebut") || singleDate,
-    dateFin: searchParams.get("dateFin") || singleDate,
   };
 }
 
@@ -114,8 +116,6 @@ function buildParams(filters) {
   if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
   if (filters.capacite) params.set("capacite", filters.capacite);
   if (filters.avecSkipper) params.set("avecSkipper", "true");
-  if (filters.dateDebut) params.set("dateDebut", filters.dateDebut);
-  if (filters.dateFin) params.set("dateFin", filters.dateFin);
   return params;
 }
 
@@ -172,6 +172,9 @@ export default function BoatList() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
+      <h1 className="font-heading text-2xl font-semibold text-white drop-shadow">
+        Nos bateaux disponibles
+      </h1>
       <h1 className="font-heading text-2xl font-semibold text-navy">
         {loading
           ? "Recherche en cours..."
@@ -184,7 +187,7 @@ export default function BoatList() {
         {/* FILTRES — colonne gauche, comme le wireframe du CDC */}
         <form
           onSubmit={applyFilters}
-          className="space-y-5 self-start rounded-2xl border border-gray-100 bg-white p-5 lg:sticky lg:top-24"
+          className="space-y-5 self-start rounded-2xl border border-white/20 bg-white/90 p-5 shadow-lg backdrop-blur-md lg:sticky lg:top-24"
         >
           <div>
             <label className="mb-1 block text-sm font-medium text-navy">
@@ -197,30 +200,6 @@ export default function BoatList() {
               placeholder="Ville, région..."
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
             />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-navy">
-              Dates
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={filters.dateDebut}
-                onChange={(e) => handleChange("dateDebut", e.target.value)}
-                aria-label="Date de début"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
-              />
-              <span className="text-gray-400">—</span>
-              <input
-                type="date"
-                value={filters.dateFin}
-                min={filters.dateDebut || undefined}
-                onChange={(e) => handleChange("dateFin", e.target.value)}
-                aria-label="Date de fin"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
-              />
-            </div>
           </div>
 
           <div>
@@ -338,8 +317,8 @@ export default function BoatList() {
 
           {!error && !loading && resultCount > 0 && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {boats.map((boat) => (
-                <BoatCard key={boat.id} boat={boat} />
+              {boats.map((boat, i) => (
+                <BoatCard key={boat.id} boat={boat} index={i} />
               ))}
             </div>
           )}
