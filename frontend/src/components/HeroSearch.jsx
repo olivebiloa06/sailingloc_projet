@@ -35,6 +35,7 @@ export default function HeroSearch({ className = "", style }) {
         </span>
         <input
           type="text"
+          data-cy="search-input"
           value={destination}
           onChange={(e) => setDestination(e.target.value)}
           placeholder="Où navigues-tu ?"
@@ -74,6 +75,7 @@ export default function HeroSearch({ className = "", style }) {
 
       <button
         type="submit"
+        data-cy="search-submit"
         aria-label="Rechercher"
         className="flex items-center justify-center gap-2 bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-navy-light sm:py-0"
       >
