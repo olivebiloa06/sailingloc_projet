@@ -46,3 +46,11 @@ router.get(
 // montage corrigé (voir le commentaire dans server.js).
 
 module.exports = router;
+
+
+// Confirmation de secours depuis la page de succès (si webhook lent)
+router.get(
+  "/stripe/confirm/:sessionId",
+  verifyToken,
+  paymentController.confirmStripeSession
+);

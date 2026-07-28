@@ -1,5 +1,8 @@
-const { Payment, Booking, Boat, User } = require("../models");
-const { sendPaymentConfirmation } = require("../services/emailService");
+const { Payment, Booking, Boat, User, Contract } = require("../models");
+const {
+  sendPaymentConfirmation,
+  sendOwnerBookingNotification,
+} = require("../services/emailService");
 const { createCheckoutSession } = require("../services/stripeService");
 const paypalService = require("../services/paypalService");
 const contractController = require("./contractController");
@@ -152,10 +155,33 @@ exports.stripeWebhook = async (req, res) => {
       booking.statut = "confirmee";
       await booking.save();
 
+      // Générer le contrat PDF
+      let contract = null;
       try {
-        await contractController.generateContractForBooking(bookingId);
+        contract = await contractController.generateContractForBooking(bookingId);
       } catch (contractError) {
         console.error("Génération du contrat échouée pour la réservation", bookingId, contractError);
+      }
+
+      // Recharger avec toutes les relations pour les emails
+      const bookingFull = await Booking.findByPk(bookingId, {
+        include: [
+          { model: Boat, include: [{ model: User }] },
+          { model: User },
+        ],
+      });
+
+      if (bookingFull?.User?.email) {
+        try {
+          await sendPaymentConfirmation(bookingFull.User.email, { montant: bookingFull.montantTotal }, bookingFull, contract);
+        } catch (e) { console.error("Email locataire:", e.message); }
+      }
+
+      const ownerEmail = bookingFull?.Boat?.User?.email;
+      if (ownerEmail) {
+        try {
+          await sendOwnerBookingNotification(ownerEmail, bookingFull);
+        } catch (e) { console.error("Email propriétaire:", e.message); }
       }
     }
 
@@ -172,6 +198,88 @@ exports.stripeWebhook = async (req, res) => {
 // =========================
 // CRÉER UNE SESSION STRIPE CHECKOUT
 // =========================
+
+// =========================
+// CONFIRMER VIA SESSION STRIPE (fallback si webhook lent/absent)
+// =========================
+// La page BookingSuccess appelle cet endpoint avec le session_id Stripe.
+// Si le webhook a déjà confirmé → idempotent, ne fait rien.
+// Si le webhook n'a pas encore tourné → confirme maintenant.
+
+exports.confirmStripeSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    // Récupère la session Stripe pour obtenir les métadonnées
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (!session || session.payment_status !== "paid") {
+      return res.status(400).json({ message: "Session non payée ou introuvable." });
+    }
+
+    const bookingId = session.metadata?.bookingId;
+    if (!bookingId) {
+      return res.status(400).json({ message: "Métadonnées de réservation manquantes." });
+    }
+
+    const booking = await Booking.findByPk(bookingId, {
+      include: [
+        { model: Boat, include: [{ model: User }] },
+        { model: User },
+      ],
+    });
+
+    if (!booking) {
+      return res.status(404).json({ message: "Réservation introuvable." });
+    }
+
+    // Déjà confirmée par le webhook — on renvoie juste les données
+    if (booking.statut === "confirmee") {
+      const contract = await Contract.findOne({ where: { bookingId } });
+      return res.status(200).json({ booking, contract, alreadyConfirmed: true });
+    }
+
+    // Pas encore confirmée — on le fait maintenant
+    const existing = await Payment.findOne({ where: { bookingId } });
+    if (!existing) {
+      await Payment.create({
+        bookingId,
+        montant: booking.montantTotal,
+        methode: "stripe",
+        statut: "paye",
+        referenceTransaction: session.payment_intent || session.id,
+        datePaiement: new Date(),
+      });
+    }
+
+    booking.statut = "confirmee";
+    await booking.save();
+
+    let contract = null;
+    try {
+      contract = await contractController.generateContractForBooking(bookingId);
+    } catch (e) {
+      console.error("Contrat:", e.message);
+    }
+
+    // Emails
+    if (booking.User?.email) {
+      try {
+        await sendPaymentConfirmation(booking.User.email, { montant: booking.montantTotal }, booking, contract);
+      } catch (e) { console.error("Email locataire:", e.message); }
+    }
+    const ownerEmail = booking.Boat?.User?.email;
+    if (ownerEmail) {
+      try {
+        await sendOwnerBookingNotification(ownerEmail, booking);
+      } catch (e) { console.error("Email propriétaire:", e.message); }
+    }
+
+    return res.status(200).json({ booking, contract });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 exports.createStripeSession = async (req, res) => {
   try {
