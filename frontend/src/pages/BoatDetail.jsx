@@ -81,7 +81,13 @@ export default function BoatDetail() {
     [bookingForm.dateDebut, bookingForm.dateFin]
   );
 
-  const totalEstime = boat && nombreJours > 0 ? nombreJours * boat.prixJour : 0;
+  // Calcul exact : prix du bateau par jour × nombre de jours.
+  // Le prixJour est le tarif de location du bateau entier (pas par personne) —
+  // c'est le modèle standard de la location nautique. La commission (10%)
+  // est prélevée par SailingLoc sur le montant total.
+  const sousTotal = boat && nombreJours > 0 ? nombreJours * boat.prixJour : 0;
+  const commission = Math.round(sousTotal * 0.1);
+  const totalEstime = sousTotal + commission;
 
   const isOwnBoat = user && boat && boat.User && boat.User.id === user.id;
   const availabilityWindow = boat?.availabilities?.[0] || null;
@@ -220,15 +226,30 @@ export default function BoatDetail() {
             </p>
 
             {isOwnBoat ? (
-              <p className="mt-4 rounded-lg bg-cloud px-4 py-3 text-sm text-gray-600">
-                C'est votre bateau — vous ne pouvez pas le réserver.
-              </p>
+              <div className="mt-4 space-y-2">
+                <p className="rounded-lg bg-cloud px-4 py-3 text-sm text-gray-600">
+                  C'est votre bateau — vous ne pouvez pas le réserver.
+                </p>
+              </div>
+            ) : !user ? (
+              <Link
+                to="/login"
+                className="mt-4 block rounded-lg bg-navy py-2.5 text-center text-sm font-semibold text-white hover:bg-navy-light"
+              >
+                Connexion pour contacter le propriétaire
+              </Link>
             ) : bookingSuccess ? (
               <div className="mt-4 space-y-3">
                 <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">
                   Réservation créée (n°{bookingSuccess.id}). Il ne reste plus
                   qu'à régler le paiement.
                 </p>
+                <Link
+                  to={`/mes-messages?with=${boat?.User?.id}&booking=${bookingSuccess.id}`}
+                  className="block rounded-lg border border-navy py-2.5 text-center text-sm font-semibold text-navy transition hover:bg-cloud"
+                >
+                  💬 Contacter le propriétaire
+                </Link>
                 <Link
                   to={`/reservations/${bookingSuccess.id}`}
                   className="block rounded-lg bg-navy py-2.5 text-center text-sm font-semibold text-white transition hover:bg-navy-light"
@@ -289,7 +310,7 @@ export default function BoatDetail() {
 
                 <div>
                   <label className="mb-1 block text-xs font-medium text-navy">
-                    Voyageurs
+                    Voyageurs <span className="font-normal text-gray-400">(max {boat.capacite})</span>
                   </label>
                   <input
                     type="number"
@@ -301,17 +322,25 @@ export default function BoatDetail() {
                     }
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
                   />
+                  <p className="mt-1 text-xs text-gray-400">
+                    Prix du bateau entier, non multiplié par le nombre de personnes.
+                  </p>
                 </div>
 
                 {nombreJours > 0 && (
-                  <div className="flex justify-between border-t border-gray-100 pt-3 text-sm text-gray-600">
-                    <span>
-                      {boat.prixJour} € × {nombreJours} jour
-                      {nombreJours > 1 ? "s" : ""}
-                    </span>
-                    <span className="font-semibold text-navy">
-                      {totalEstime} € estimé
-                    </span>
+                  <div className="space-y-1.5 border-t border-gray-100 pt-3 text-sm">
+                    <div className="flex justify-between text-gray-500">
+                      <span>{boat.prixJour} € × {nombreJours} jour{nombreJours > 1 ? "s" : ""}</span>
+                      <span>{sousTotal} €</span>
+                    </div>
+                    <div className="flex justify-between text-gray-400 text-xs">
+                      <span>Frais de service SailingLoc (10%)</span>
+                      <span>{commission} €</span>
+                    </div>
+                    <div className="flex justify-between border-t border-gray-100 pt-2 font-semibold text-navy">
+                      <span>Total</span>
+                      <span>{totalEstime} €</span>
+                    </div>
                   </div>
                 )}
 

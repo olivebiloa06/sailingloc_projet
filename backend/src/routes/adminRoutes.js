@@ -27,3 +27,14 @@ router.get("/reviews", adminController.getAllReviews);
 router.delete("/reviews/:id", adminController.deleteReview);
 
 module.exports = router;
+// Route publique — renvoie l'ID de l'admin pour la messagerie de contact
+// Pas d'authentification requise (le formulaire de contact est public).
+router.get("/info", async (req, res) => {
+  const { User } = require("../models");
+  try {
+    const admin = await User.findOne({ where: { role: "admin" }, attributes: ["id"] });
+    return res.status(200).json({ adminId: admin?.id || 1 });
+  } catch {
+    return res.status(200).json({ adminId: 1 });
+  }
+});
