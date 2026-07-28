@@ -21,10 +21,6 @@ export default function Avis() {
   const [stats, setStats] = useState({ avg: 0, count: 0 });
 
   useEffect(() => {
-    // Route publique des avis — on agrège depuis les avis par bateau
-    // car /admin/reviews est protégé admin.
-    // On charge les avis récents via la route publique reviews/boat
-    // en passant par l'endpoint admin si connecté, sinon on affiche vide.
     api.get("/admin/reviews")
       .then((res) => {
         const r = res.data.reviews || [];
@@ -34,24 +30,7 @@ export default function Avis() {
           setStats({ avg: Math.round(avg * 10) / 10, count: r.length });
         }
       })
-      .catch(() => {
-        // Non connecté ou pas admin → charge depuis les bateaux publics
-        api.get("/boats").then(({ data }) => {
-          const boats = data.boats || [];
-          Promise.all(
-            boats.slice(0, 5).map((b) =>
-              api.get(`/reviews/boat/${b.id}`).then((r) => r.data.reviews || []).catch(() => [])
-            )
-          ).then((results) => {
-            const all = results.flat().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            setReviews(all);
-            if (all.length > 0) {
-              const avg = all.reduce((s, x) => s + x.note, 0) / all.length;
-              setStats({ avg: Math.round(avg * 10) / 10, count: all.length });
-            }
-          });
-        }).catch(() => {});
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

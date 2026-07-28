@@ -1,17 +1,32 @@
 const { Review, User, Booking, Boat } = require("../models");
 
+// =========================
 // AVIS PAR BATEAU (public)
+// =========================
+// Utilisé sur la fiche bateau ET pour calculer la note moyenne
+// affichée sur les cartes de la liste et de la homepage.
 exports.getReviewsByBoat = async (req, res) => {
   try {
     const { boatId } = req.params;
+
     const reviews = await Review.findAll({
       where: { boatId },
-      include: [{ model: User, attributes: ["id", "prenom", "nom"] }],
+      include: [
+        {
+          model: User,
+          attributes: ["id", "prenom", "nom"],
+        },
+      ],
       order: [["createdAt", "DESC"]],
     });
-    const average = reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + r.note, 0) / reviews.length
-      : null;
+
+    // Note moyenne calculée ici pour éviter de le faire côté client
+    // sur chaque appel — une seule requête, tout est renvoyé.
+    const average =
+      reviews.length > 0
+        ? reviews.reduce((sum, r) => sum + r.note, 0) / reviews.length
+        : null;
+
     return res.status(200).json({
       reviews,
       average: average ? Math.round(average * 10) / 10 : null,
@@ -22,44 +37,52 @@ exports.getReviewsByBoat = async (req, res) => {
   }
 };
 
-// TOUS LES AVIS (public) — homepage + page Avis
-exports.getAllReviews = async (req, res) => {
-  try {
-    const reviews = await Review.findAll({
-      include: [
-        { model: User, attributes: ["id", "prenom", "nom"] },
-        { model: Boat, attributes: ["id", "nom"] },
-      ],
-      order: [["createdAt", "DESC"]],
-    });
-    return res.status(200).json({ reviews });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
-
+// =========================
 // CRÉER UN AVIS (locataire authentifié)
+// =========================
 exports.createReview = async (req, res) => {
   try {
     const { bookingId, note, commentaire } = req.body;
+
     if (!bookingId || !note) {
-      return res.status(400).json({ message: "bookingId et note sont obligatoires." });
+      return res.status(400).json({
+        message: "bookingId et note sont obligatoires.",
+      });
     }
+
     if (note < 1 || note > 5) {
-      return res.status(400).json({ message: "La note doit être comprise entre 1 et 5." });
+      return res.status(400).json({
+        message: "La note doit être comprise entre 1 et 5.",
+      });
     }
-    const booking = await Booking.findByPk(bookingId, { include: [{ model: Boat }] });
-    if (!booking) return res.status(404).json({ message: "Réservation introuvable." });
+
+    const booking = await Booking.findByPk(bookingId, {
+      include: [{ model: Boat }],
+    });
+
+    if (!booking) {
+      return res.status(404).json({ message: "Réservation introuvable." });
+    }
+
     if (booking.userId !== req.user.id) {
-      return res.status(403).json({ message: "Vous ne pouvez laisser un avis que sur vos propres réservations." });
+      return res.status(403).json({
+        message: "Vous ne pouvez laisser un avis que sur vos propres réservations.",
+      });
     }
+
     if (!["confirmee", "terminee"].includes(booking.statut)) {
-      return res.status(400).json({ message: "Vous ne pouvez laisser un avis que sur une réservation confirmée ou terminée." });
+      return res.status(400).json({
+        message: "Vous ne pouvez laisser un avis que sur une réservation confirmée ou terminée.",
+      });
     }
+
     const existing = await Review.findOne({ where: { bookingId } });
     if (existing) {
-      return res.status(400).json({ message: "Vous avez déjà laissé un avis pour cette réservation." });
+      return res.status(400).json({
+        message: "Vous avez déjà laissé un avis pour cette réservation.",
+      });
     }
+
     const review = await Review.create({
       bookingId,
       boatId: booking.boatId,
@@ -67,7 +90,11 @@ exports.createReview = async (req, res) => {
       note,
       commentaire: commentaire || "",
     });
-    return res.status(201).json({ message: "Avis publié avec succès", review });
+
+    return res.status(201).json({
+      message: "Avis publié avec succès",
+      review,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
