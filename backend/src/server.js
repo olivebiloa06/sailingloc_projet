@@ -42,9 +42,7 @@ const io = new Server(httpServer, {
   },
 });
 
-// Socket.io — gestion des rooms de conversation
 io.on("connection", (socket) => {
-  // Le client rejoint la room de sa conversation dès qu'il l'ouvre
   socket.on("join_conversation", (conversationId) => {
     socket.join(`conversation:${conversationId}`);
   });
@@ -53,7 +51,6 @@ io.on("connection", (socket) => {
     socket.leave(`conversation:${conversationId}`);
   });
 
-  // Indicateur "en train d'écrire..."
   socket.on("typing", ({ conversationId, prenom }) => {
     socket.to(`conversation:${conversationId}`).emit("typing", { prenom });
   });
@@ -63,31 +60,23 @@ io.on("connection", (socket) => {
   });
 });
 
-// Rend io accessible dans les controllers via req.app.get("io")
 app.set("io", io);
 
-app.use(helmet());
+// Helmet avec crossOriginResourcePolicy désactivé pour permettre
+// le chargement des images et documents depuis le frontend (localhost:5173)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(morgan("dev"));
 
-// ---------------------------------------------------------------------------
-// Webhook Stripe — DOIT être monté avant express.json(), avec son propre
-// express.raw(), et appeler directement le contrôleur (pas le routeur
-// paymentRoutes). Avant ce correctif, cette route était aussi atteignable via
-// app.use("/api/payments", paymentRoutes) plus bas, déjà passé par
-// express.json() : stripe.webhooks.constructEvent() recevait alors un objet
-// JS au lieu du buffer brut attendu, et la vérification de signature échouait
-// systématiquement. Le routeur paymentRoutes ne définit donc plus cette route
-// du tout (voir routes/paymentRoutes.js) : il n'y a plus qu'un seul chemin
-// possible pour /api/payments/stripe/webhook.
+// Webhook Stripe — avant express.json()
 app.post(
   "/api/payments/stripe/webhook",
   express.raw({ type: "application/json" }),
   paymentController.stripeWebhook
 );
 
-// CORS restreint à l'origine du front (pas de wildcard "*"), nécessaire pour
-// que le cookie HttpOnly du refresh token puisse être envoyé/reçu en
-// cross-origin (credentials: true). FRONTEND_URL doit être défini dans .env.
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
@@ -99,7 +88,7 @@ app.use(cookieParser());
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1000,
+  max: process.env.LOAD_TEST === "true" ? 100000 : 1000,
   message: {
     message: "Trop de requêtes, veuillez réessayer plus tard.",
   },
@@ -107,15 +96,18 @@ const apiLimiter = rateLimit({
 
 app.use("/api", apiLimiter);
 
-// ---------------------------------------------------------------------------
-// Fichiers statiques — uniquement les visuels publics (photos de bateaux).
-// Les documents sensibles (permis, pièce d'identité, assurance...) ne sont
-// JAMAIS servis via express.static : ils passent par
-// GET /api/documents/:id/file, qui vérifie l'authentification ET la
-// propriété du document avant d'envoyer le fichier (voir documentController).
+// Fichiers statiques — photos de bateaux (publics)
 const boatUploadsDir = path.join(__dirname, "../uploads/boats");
 fs.mkdirSync(boatUploadsDir, { recursive: true });
 app.use("/uploads/boats", express.static(boatUploadsDir));
+
+// Fichiers statiques — contrats PDF (publics pour téléchargement)
+const contractsUploadsDir = path.join(__dirname, "../uploads/contracts");
+fs.mkdirSync(contractsUploadsDir, { recursive: true });
+app.use("/uploads/contracts", express.static(contractsUploadsDir));
+
+// Les documents sensibles (pièce d'identité, assurance) restent
+// protégés via GET /api/documents/:id/file avec auth obligatoire.
 
 app.get("/", (req, res) => {
   res.send("API SailingLoc fonctionne !");
@@ -137,8 +129,6 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Gestion centralisée des routes inconnues et des erreurs non interceptées,
-// pour ne jamais laisser fuiter une stack trace brute au client.
 app.use((req, res) => {
   res.status(404).json({ message: "Ressource introuvable." });
 });
@@ -162,10 +152,6 @@ const startServer = async () => {
     console.log("Connexion PostgreSQL réussie.");
 
     if (process.env.NODE_ENV === "production") {
-      // En production, AUCUN sync automatique : le schéma de base doit être
-      // géré par de vraies migrations Sequelize (sequelize-cli db:migrate),
-      // pas par sync({ alter: true }), qui peut modifier/supprimer des
-      // colonnes en production de façon imprévisible.
       console.log(
         "Mode production : sync désactivé, exécutez les migrations manuellement."
       );

@@ -50,6 +50,7 @@ function BoatCard({ boat, index = 0 }) {
   return (
     <Link
       to={`/boats/${boat.id}`}
+      data-cy="boat-card"
       className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-navy/10 animate-fade-up"
     >
       <div className="relative h-44 overflow-hidden bg-gradient-to-br from-navy to-sky">

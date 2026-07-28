@@ -169,7 +169,12 @@ export default function BoatDetail() {
         <div>
           <div className="relative h-80 overflow-hidden rounded-2xl bg-gradient-to-br from-navy to-sky">
             {image ? (
-              <img src={image} alt={boat.nom} className="h-full w-full object-cover" />
+              <img
+                src={image}
+                alt={boat.nom}
+                className="h-full w-full object-cover"
+                onError={(e) => { e.target.style.display = "none"; }}
+              />
             ) : (
               <div className="flex h-full items-center justify-center">
                 <BoatMark className="h-14 w-14 text-white/40" />
@@ -179,7 +184,7 @@ export default function BoatDetail() {
 
           <div className="mt-6 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="font-heading text-2xl font-semibold text-navy">
+              <h1 className="font-heading text-2xl font-semibold text-navy" data-cy="boat-title">
                 {boat.nom}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
@@ -220,7 +225,7 @@ export default function BoatDetail() {
         {/* RÉSERVATION — colonne droite, sticky */}
         <div className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <p className="font-heading text-xl font-semibold text-navy">
+            <p className="font-heading text-xl font-semibold text-navy" data-cy="boat-price">
               {boat.prixJour} €
               <span className="text-sm font-normal text-gray-400">/jour</span>
             </p>
@@ -286,6 +291,7 @@ export default function BoatDetail() {
                     </label>
                     <input
                       type="date"
+                      data-cy="date-start"
                       value={bookingForm.dateDebut}
                       onChange={(e) => handleBookingChange("dateDebut", e.target.value)}
                       min={availabilityWindow ? toInputDate(availabilityWindow.dateDebut) : undefined}
@@ -299,6 +305,7 @@ export default function BoatDetail() {
                     </label>
                     <input
                       type="date"
+                      data-cy="date-end"
                       value={bookingForm.dateFin}
                       onChange={(e) => handleBookingChange("dateFin", e.target.value)}
                       min={bookingForm.dateDebut || (availabilityWindow ? toInputDate(availabilityWindow.dateDebut) : undefined)}
@@ -346,6 +353,7 @@ export default function BoatDetail() {
 
                 <button
                   type="submit"
+                  data-cy="reserve-button"
                   disabled={bookingSubmitting}
                   className="w-full rounded-lg bg-navy py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-60"
                 >
