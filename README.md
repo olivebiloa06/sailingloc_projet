@@ -340,6 +340,7 @@ User ──────────────── Boat
 |--------|------|
 | **Olive Biloa Ombolo** | Lead Developer · Chef de Projet Digital |
 | **Massylia Sahi** | Développeuse Full-Stack |
+| **Ayman** | Développeuse Full-Stack |
 
 **Agence :** Pandawan  
 **École :** Digital School of Paris (DSP), Vincennes  
