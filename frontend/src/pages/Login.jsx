@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { isValidEmail } from "../utils/validators";
+import PasswordInput from "../components/PasswordInput";
 
 export default function Login() {
   const { login } = useAuth();
@@ -11,7 +12,18 @@ export default function Login() {
   // utilisateur redirigé depuis /boats?localisation=Corse perdrait son
   // filtre après connexion et retomberait sur /boats tout court.
   const from = location.state?.from;
-  const redirectTo = from ? `${from.pathname}${from.search || ""}` : "/";
+
+  // Sans page d'origine à honorer (connexion directe depuis /login) : un
+  // locataire est envoyé directement sur le catalogue de bateaux, puisque
+  // c'est ce qu'il vient faire. Propriétaire et admin sont envoyés sur
+  // /mon-compte, qui affiche automatiquement le bon tableau de bord selon
+  // le rôle (voir Account.jsx : AdminDashboard / OwnerDashboard / RenterDashboard).
+  const DEFAULT_REDIRECT_BY_ROLE = {
+    locataire: "/boats",
+    proprietaire: "/mon-compte",
+    admin: "/mon-compte",
+  };
+  const defaultRedirectFor = (role) => DEFAULT_REDIRECT_BY_ROLE[role] || "/boats";
 
   const [form, setForm] = useState({ email: "", motDePasse: "" });
   const [errors, setErrors] = useState({});
@@ -37,7 +49,10 @@ export default function Login() {
 
     setSubmitting(true);
     try {
-      await login(form.email, form.motDePasse);
+      const loggedInUser = await login(form.email, form.motDePasse);
+      const redirectTo = from
+        ? `${from.pathname}${from.search || ""}`
+        : defaultRedirectFor(loggedInUser.role);
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setServerError(
@@ -133,14 +148,12 @@ export default function Login() {
               >
                 Mot de passe oublié ?
               </Link>
-              <input
+              <PasswordInput
                 id="motDePasse"
                 name="motDePasse"
-                type="password"
                 autoComplete="current-password"
                 value={form.motDePasse}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
               />
               {errors.motDePasse && (
                 <p className="mt-1 text-xs text-red-600">{errors.motDePasse}</p>

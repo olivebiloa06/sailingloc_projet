@@ -38,6 +38,31 @@ exports.getReviewsByBoat = async (req, res) => {
 };
 
 // =========================
+// DERNIERS AVIS (public — page "Avis" et témoignages de la homepage)
+// =========================
+// Contrairement à GET /admin/reviews (réservé aux admins), cet endpoint est
+// public : il ne renvoie que ce qui est déjà affiché publiquement sur une
+// fiche bateau (note, commentaire, auteur, bateau), donc rien de sensible.
+exports.getLatestReviews = async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+
+    const reviews = await Review.findAll({
+      include: [
+        { model: User, attributes: ["id", "prenom", "nom", "role"] },
+        { model: Boat, attributes: ["id", "nom"] },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit,
+    });
+
+    return res.status(200).json({ reviews });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// =========================
 // CRÉER UN AVIS (locataire authentifié)
 // =========================
 exports.createReview = async (req, res) => {
@@ -83,13 +108,22 @@ exports.createReview = async (req, res) => {
       });
     }
 
-    const review = await Review.create({
-      bookingId,
-      boatId: booking.boatId,
-      userId: req.user.id,
-      note,
-      commentaire: commentaire || "",
-    });
+    let review;
+    try {
+      review = await Review.create({
+        bookingId,
+        boatId: booking.boatId,
+        userId: req.user.id,
+        note,
+        commentaire: commentaire || "",
+      });
+    } catch (createError) {
+
+      if (createError.name !== "SequelizeUniqueConstraintError") throw createError;
+      return res.status(400).json({
+        message: "Vous avez déjà laissé un avis pour cette réservation.",
+      });
+    }
 
     return res.status(201).json({
       message: "Avis publié avec succès",

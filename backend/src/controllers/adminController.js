@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const {
   User,
   Booking,
@@ -44,6 +45,18 @@ exports.updateUserRole = async (req, res) => {
       return res.status(404).json({
         message: "Utilisateur introuvable",
       });
+    }
+
+
+    if (user.role === "admin" && role !== "admin") {
+      const otherAdmins = await User.count({
+        where: { role: "admin", id: { [Op.ne]: user.id } },
+      });
+      if (otherAdmins === 0) {
+        return res.status(400).json({
+          message: "Impossible de retirer le rôle admin du dernier administrateur restant.",
+        });
+      }
     }
 
     await user.update({ role });

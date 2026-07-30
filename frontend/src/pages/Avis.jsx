@@ -21,7 +21,7 @@ export default function Avis() {
   const [stats, setStats] = useState({ avg: 0, count: 0 });
 
   useEffect(() => {
-    api.get("/admin/reviews")
+    api.get("/reviews/latest")
       .then((res) => {
         const r = res.data.reviews || [];
         setReviews(r);

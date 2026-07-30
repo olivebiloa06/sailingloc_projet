@@ -5,7 +5,25 @@ const adminController = require("../controllers/adminController");
 const { verifyToken } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 
-// Toutes les routes admin sont protégées
+// Route publique — renvoie l'ID de l'admin pour la messagerie de contact.
+// Pas d'authentification requise (le formulaire de contact est public).
+// DOIT être déclarée AVANT les router.use(verifyToken)/authorizeRoles
+// ci-dessous : ces derniers s'appliquent à toute route déclarée après eux sur
+// ce router, donc les déclarer avant "/info" la rendrait admin-only malgré ce
+// commentaire (un visiteur non connecté recevrait un 401, ce qui déclenche en
+// plus une redirection forcée vers /login côté frontend — voir l'intercepteur
+// axios dans services/api.js).
+router.get("/info", async (req, res) => {
+  const { User } = require("../models");
+  try {
+    const admin = await User.findOne({ where: { role: "admin" }, attributes: ["id"] });
+    return res.status(200).json({ adminId: admin?.id || 1 });
+  } catch {
+    return res.status(200).json({ adminId: 1 });
+  }
+});
+
+// Toutes les routes ci-dessous sont protégées (admin uniquement)
 router.use(verifyToken);
 router.use(authorizeRoles("admin"));
 
@@ -27,14 +45,3 @@ router.get("/reviews", adminController.getAllReviews);
 router.delete("/reviews/:id", adminController.deleteReview);
 
 module.exports = router;
-// Route publique — renvoie l'ID de l'admin pour la messagerie de contact
-// Pas d'authentification requise (le formulaire de contact est public).
-router.get("/info", async (req, res) => {
-  const { User } = require("../models");
-  try {
-    const admin = await User.findOne({ where: { role: "admin" }, attributes: ["id"] });
-    return res.status(200).json({ adminId: admin?.id || 1 });
-  } catch {
-    return res.status(200).json({ adminId: 1 });
-  }
-});

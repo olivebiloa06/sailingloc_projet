@@ -171,12 +171,9 @@ export default function Home() {
 
   useEffect(() => {
     // Charge les derniers avis publiés depuis l'API (du plus récent au plus ancien)
-    api.get("/admin/reviews")
+    api.get("/reviews/latest?limit=6")
       .then(({ data }) => {
-        const sorted = (data.reviews || [])
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          .slice(0, 6); // max 6 avis sur la homepage
-        setReviews(sorted);
+        setReviews(data.reviews || []);
       })
       .catch(() => {});
   }, []);

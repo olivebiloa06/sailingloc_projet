@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { Conversation, Message, User, Booking } = require("../models");
+const { Conversation, Message, User } = require("../models");
 
 // Helper — vérifie que l'utilisateur fait partie de la conversation
 async function findConversationForUser(conversationId, userId) {
@@ -58,24 +58,44 @@ exports.getOrCreateConversation = async (req, res) => {
       return res.status(400).json({ message: "Impossible de créer une conversation avec soi-même." });
     }
 
+    const otherUser = await User.findByPk(otherUserId);
+    if (!otherUser) {
+      return res.status(404).json({ message: "Utilisateur introuvable." });
+    }
+
+
+  
+    const participant1Id = Math.min(myId, otherUserId);
+    const participant2Id = Math.max(myId, otherUserId);
+
     // Cherche une conversation existante entre les deux utilisateurs
     let conversation = await Conversation.findOne({
       where: {
-        [Op.or]: [
-          { participant1Id: myId, participant2Id: otherUserId },
-          { participant1Id: otherUserId, participant2Id: myId },
-        ],
+        participant1Id,
+        participant2Id,
         ...(bookingId ? { bookingId } : {}),
       },
     });
 
     if (!conversation) {
-      conversation = await Conversation.create({
-        participant1Id: myId,
-        participant2Id: otherUserId,
-        bookingId: bookingId || null,
-        lastMessageAt: new Date(),
-      });
+      try {
+        conversation = await Conversation.create({
+          participant1Id,
+          participant2Id,
+          bookingId: bookingId || null,
+          lastMessageAt: new Date(),
+        });
+      } catch (createError) {
+
+        if (createError.name !== "SequelizeUniqueConstraintError") throw createError;
+        conversation = await Conversation.findOne({
+          where: {
+            participant1Id,
+            participant2Id,
+            ...(bookingId ? { bookingId } : {}),
+          },
+        });
+      }
     }
 
     return res.status(200).json({ conversation });

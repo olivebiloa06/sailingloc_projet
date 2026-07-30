@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import api from "../services/api";
 import { isValidEmail, getPasswordStrengthError } from "../utils/validators";
+import PasswordInput from "../components/PasswordInput";
 
 // Documents obligatoires selon le rôle du compte créé.
 // La validation se fait côté admin (pas automatiquement) — le compte existe
@@ -190,7 +191,9 @@ export default function Register() {
       if (form.role === "proprietaire") {
         setShowDocStep(true);
       } else {
-        navigate("/", { replace: true });
+        // Comme après une connexion classique : un locataire est envoyé
+        // directement sur le catalogue de bateaux, pas la homepage.
+        navigate("/boats", { replace: true });
       }
     } catch (err) {
       setServerError(
@@ -292,20 +295,18 @@ export default function Register() {
 
             <div>
               <label htmlFor="motDePasse" className="mb-1 block text-sm font-medium text-navy">Mot de passe</label>
-              <input
-                id="motDePasse" name="motDePasse" type="password" autoComplete="new-password"
+              <PasswordInput
+                id="motDePasse" name="motDePasse" autoComplete="new-password"
                 value={form.motDePasse} onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
               />
               {errors.motDePasse && <p className="mt-1 text-xs text-red-600">{errors.motDePasse}</p>}
             </div>
 
             <div>
               <label htmlFor="confirmation" className="mb-1 block text-sm font-medium text-navy">Confirmer le mot de passe</label>
-              <input
-                id="confirmation" name="confirmation" type="password" autoComplete="new-password"
+              <PasswordInput
+                id="confirmation" name="confirmation" autoComplete="new-password"
                 value={form.confirmation} onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
               />
               {errors.confirmation && <p className="mt-1 text-xs text-red-600">{errors.confirmation}</p>}
             </div>
