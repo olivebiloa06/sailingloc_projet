@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
@@ -236,8 +236,7 @@ function formatDate(v) {
 }
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [stats, setStats] = useState(null);
   const [pendingDocs, setPendingDocs] = useState([]);
@@ -314,8 +313,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = async () => { await logout(); navigate("/", { replace: true }); };
-
   const TABS = [
     { key: "kpi", label: "Tableau de bord" },
     { key: "docs", label: `Documents${stats?.pendingDocs > 0 ? ` (${stats.pendingDocs})` : ""}` },
@@ -335,9 +332,6 @@ export default function AdminDashboard() {
           </h1>
           <p className="mt-1 text-sm text-gray-500">Connecté en tant qu'admin · {user?.email}</p>
         </div>
-        <button onClick={handleLogout} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-navy">
-          Se déconnecter
-        </button>
       </div>
 
       {/* Tabs */}

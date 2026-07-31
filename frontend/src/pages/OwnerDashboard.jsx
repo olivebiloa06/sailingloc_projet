@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
@@ -23,8 +23,7 @@ function formatDate(v) {
 }
 
 export default function OwnerDashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,8 +87,6 @@ export default function OwnerDashboard() {
     }
   };
 
-  const handleLogout = async () => { await logout(); navigate("/", { replace: true }); };
-
   const pending = bookings.filter((b) => b.statut === "en_attente");
 
   return (
@@ -102,9 +99,6 @@ export default function OwnerDashboard() {
           </h1>
           <p className="mt-1 text-sm text-gray-500">Propriétaire · {user?.email}</p>
         </div>
-        <button onClick={handleLogout} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-navy hover:text-navy">
-          Se déconnecter
-        </button>
       </div>
 
       {/* KPIs revenus */}

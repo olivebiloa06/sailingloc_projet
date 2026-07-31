@@ -20,6 +20,7 @@ import {
   CompassIcon,
   InfoIcon,
 } from "./DiscoverIcons";
+import { UserIcon, CalendarIcon, ChatIcon, ShieldIcon, LogoutIcon } from "./AccountIcons";
 
 const DECOUVRIR_MENU = [
   {
@@ -140,9 +141,16 @@ function DecouvrirDropdown() {
 
 function AccountLink() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const btnRef = useRef(null);
+
+  const handleLogout = async () => {
+    setOpen(false);
+    await logout();
+    navigate("/");
+  };
 
   useEffect(() => {
     const handler = (e) => {
@@ -219,23 +227,35 @@ function AccountLink() {
           </div>
           <div className="p-2">
             {[
-              { to: "/mon-compte", label: "Mon compte", icon: "👤", show: true },
-              { to: "/mes-bateaux", label: "Mes bateaux", icon: "⛵", show: user.role === "proprietaire" },
-              { to: "/mes-reservations", label: "Mes réservations", icon: "📅", show: user.role !== "admin" },
-              { to: "/mes-messages", label: "Messages", icon: "💬", show: true },
-              { to: "/admin/documents", label: "Administration", icon: "🛡️", show: user.role === "admin", className: "text-sky" },
+              { to: "/mon-compte", label: "Mon compte", icon: UserIcon, show: true },
+              { to: "/mes-bateaux", label: "Mes bateaux", icon: BoatMark, show: user.role === "proprietaire" },
+              { to: "/mes-reservations", label: "Mes réservations", icon: CalendarIcon, show: user.role !== "admin" },
+              { to: "/mes-messages", label: "Messages", icon: ChatIcon, show: true },
+              { to: "/admin/documents", label: "Administration", icon: ShieldIcon, show: user.role === "admin", className: "text-sky" },
             ].filter((l) => l.show).map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
                 role="menuitem"
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-cloud focus:outline-none focus:ring-2 focus:ring-sky ${l.className || "text-gray-700"}`}
+                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-cloud focus:outline-none focus:ring-2 focus:ring-sky ${l.className || "text-gray-700"}`}
               >
-                <span aria-hidden="true">{l.icon}</span>
+                <l.icon className="h-4 w-4 shrink-0" />
                 {l.label}
               </Link>
             ))}
+
+            <div className="my-1 border-t border-gray-100" />
+
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-gray-700 hover:bg-cloud focus:outline-none focus:ring-2 focus:ring-sky"
+            >
+              <LogoutIcon className="h-4 w-4 shrink-0" />
+              Déconnexion
+            </button>
           </div>
         </div>
       )}
@@ -337,13 +357,13 @@ export default function Header() {
   // toujours afficher "Connexion" comme si personne n'était authentifié.
   const mobileAccountLinks = user
     ? [
-        { to: "/mon-compte", label: "Mon compte" },
-        ...(user.role === "proprietaire" ? [{ to: "/mes-bateaux", label: "Mes bateaux" }] : []),
-        ...(user.role !== "admin" ? [{ to: "/mes-reservations", label: "Mes réservations" }] : []),
-        { to: "/mes-messages", label: "Messages" },
-        ...(user.role === "admin" ? [{ to: "/admin/documents", label: "Administration" }] : []),
+        { to: "/mon-compte", label: "Mon compte", icon: UserIcon },
+        ...(user.role === "proprietaire" ? [{ to: "/mes-bateaux", label: "Mes bateaux", icon: BoatMark }] : []),
+        ...(user.role !== "admin" ? [{ to: "/mes-reservations", label: "Mes réservations", icon: CalendarIcon }] : []),
+        { to: "/mes-messages", label: "Messages", icon: ChatIcon },
+        ...(user.role === "admin" ? [{ to: "/admin/documents", label: "Administration", icon: ShieldIcon }] : []),
       ]
-    : [{ to: "/login", label: "Connexion" }];
+    : [{ to: "/login", label: "Connexion", icon: UserIcon }];
 
   return (
     <header
@@ -389,12 +409,14 @@ export default function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
-            to="/register?role=proprietaire"
-            className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
-          >
-            Devenir propriétaire
-          </Link>
+          {user?.role !== "proprietaire" && (
+            <Link
+              to="/register?role=proprietaire"
+              className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
+            >
+              Devenir propriétaire
+            </Link>
+          )}
           <AccountLink />
           <LanguageCurrencyPicker />
         </div>
@@ -459,8 +481,9 @@ export default function Header() {
                 key={l.label}
                 to={l.to}
                 onClick={() => setMobileOpen(false)}
-                className="py-1 text-sm font-medium text-gray-700 hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky rounded"
+                className="flex items-center gap-2.5 py-1 text-sm font-medium text-gray-700 hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky rounded"
               >
+                <l.icon className="h-4 w-4 shrink-0" />
                 {l.label}
               </Link>
             ))}
@@ -469,8 +492,9 @@ export default function Header() {
               <button
                 type="button"
                 onClick={handleMobileLogout}
-                className="py-1 text-left text-sm font-medium text-gray-700 hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky rounded"
+                className="flex items-center gap-2.5 py-1 text-left text-sm font-medium text-gray-700 hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky rounded"
               >
+                <LogoutIcon className="h-4 w-4 shrink-0" />
                 Déconnexion
               </button>
             )}
