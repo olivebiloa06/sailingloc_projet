@@ -5,6 +5,7 @@ import BoatMark from "../components/BoatMark";
 import Carousel from "../components/Carousel";
 import Reveal from "../components/Reveal";
 import api from "../services/api";
+import { usePublishBoatLink } from "../hooks/usePublishBoatLink";
 
 // Images hero et destinations depuis les assets locaux
 import heroImg from "../assets/pexels-elijahjcobb-35599466.jpg";
@@ -168,6 +169,7 @@ function TestimonialCard({ testimonial }) {
 
 export default function Home() {
   const [reviews, setReviews] = useState([]);
+  const publishBoatLink = usePublishBoatLink();
 
   useEffect(() => {
     // Charge les derniers avis publiés depuis l'API (du plus récent au plus ancien)
@@ -279,7 +281,7 @@ export default function Home() {
               </Link>
             </Reveal>
             <Reveal delay={150}>
-              <Link to="/register?role=proprietaire" className="group relative block h-full rounded-2xl bg-white p-7 shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
+              <Link to={publishBoatLink} className="group relative block h-full rounded-2xl bg-white p-7 shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
                 <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 border-sable bg-navy text-sm font-semibold text-sable">2</span>
                 <h3 className="mt-4 font-heading text-lg font-semibold text-navy">Propriétaire</h3>
                 <p className="mt-2 text-sm leading-relaxed text-gray-600">Mets ton bateau en location entre deux sorties, fixe tes disponibilités et ton prix, et génère un revenu complémentaire en toute sécurité.</p>

@@ -21,8 +21,10 @@ import {
   InfoIcon,
 } from "./DiscoverIcons";
 import { UserIcon, CalendarIcon, ChatIcon, ShieldIcon, LogoutIcon } from "./AccountIcons";
+import { usePublishBoatLink } from "../hooks/usePublishBoatLink";
 
-const DECOUVRIR_MENU = [
+
+const getDecouvrirMenu = (publishBoatLink) => [
   {
     section: "Louer un bateau",
     items: [
@@ -46,7 +48,7 @@ const DECOUVRIR_MENU = [
   {
     section: "Pour les propriétaires",
     items: [
-      { to: "/register?role=proprietaire", label: "Mettre mon bateau en location", icon: MegaphoneIcon, desc: "Publie ton annonce gratuitement" },
+      { to: publishBoatLink, label: "Mettre mon bateau en location", icon: MegaphoneIcon, desc: "Publie ton annonce gratuitement" },
       { to: "/mon-compte", label: "Gérer mes annonces", icon: ClipboardIcon, desc: "Disponibilités, réservations, revenus" },
     ],
   },
@@ -63,6 +65,8 @@ function DecouvrirDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const btnRef = useRef(null);
+  const publishBoatLink = usePublishBoatLink();
+  const decouvrirMenu = getDecouvrirMenu(publishBoatLink);
 
   useEffect(() => {
     const handler = (e) => {
@@ -104,7 +108,7 @@ function DecouvrirDropdown() {
           className="absolute left-0 top-full z-50 mt-3 w-[680px] -translate-x-1/4 rounded-2xl border border-gray-100 bg-white shadow-2xl"
         >
           <div className="grid grid-cols-2 gap-0 p-4">
-            {DECOUVRIR_MENU.map((group) => (
+            {decouvrirMenu.map((group) => (
               <div key={group.section} className="p-3">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
                   {group.section}

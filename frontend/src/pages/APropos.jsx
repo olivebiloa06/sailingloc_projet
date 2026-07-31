@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Reveal from "../components/Reveal";
 import BoatMark from "../components/BoatMark";
+import { usePublishBoatLink } from "../hooks/usePublishBoatLink";
 
 const VALEURS = [
   { icon: "🛡️", titre: "Confiance", desc: "Profils vérifiés, documents contrôlés par notre équipe avant toute publication." },
@@ -41,6 +42,7 @@ const FAQ = [
 ];
 
 export default function APropos() {
+  const publishBoatLink = usePublishBoatLink();
   return (
     <div className="bg-cloud">
       {/* Hero */}
@@ -207,7 +209,7 @@ export default function APropos() {
                 Trouver un bateau
               </Link>
               <Link
-                to="/register?role=proprietaire"
+                to={publishBoatLink}
                 className="rounded-full border border-white/30 px-8 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
                 Mettre mon bateau en location

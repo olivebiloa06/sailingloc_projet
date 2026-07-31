@@ -1,33 +1,6 @@
 import { Link } from "react-router-dom";
 import HorizonDivider from "./HorizonDivider";
-
-const COLUMNS = [
-  {
-    title: "Navigation",
-    links: [
-      { to: "/boats", label: "Explorer les bateaux" },
-      { to: "/#comment-ca-marche", label: "Comment ça marche" },
-      { to: "/a-propos", label: "À propos" },
-      { to: "/avis", label: "Avis" },
-    ],
-  },
-  {
-    title: "Assistance",
-    links: [
-      { to: "/aide", label: "Centre d'aide" },
-      { to: "/contact", label: "Contact" },
-      { to: "/securite", label: "Sécurité & confiance" },
-    ],
-  },
-  {
-    title: "Propriétaires",
-    links: [
-      { to: "/register?role=proprietaire", label: "Mettre mon bateau en location" },
-      { to: "/ressources-proprietaires", label: "Ressources propriétaires" },
-      { to: "/assurance", label: "Assurance & garanties" },
-    ],
-  },
-];
+import { usePublishBoatLink } from "../hooks/usePublishBoatLink";
 
 const LEGAL_LINKS = [
   { to: "/mentions-legales", label: "Mentions légales" },
@@ -36,6 +9,36 @@ const LEGAL_LINKS = [
 ];
 
 export default function Footer() {
+  const publishBoatLink = usePublishBoatLink();
+
+  const columns = [
+    {
+      title: "Navigation",
+      links: [
+        { to: "/boats", label: "Explorer les bateaux" },
+        { to: "/#comment-ca-marche", label: "Comment ça marche" },
+        { to: "/a-propos", label: "À propos" },
+        { to: "/avis", label: "Avis" },
+      ],
+    },
+    {
+      title: "Assistance",
+      links: [
+        { to: "/aide", label: "Centre d'aide" },
+        { to: "/contact", label: "Contact" },
+        { to: "/securite", label: "Sécurité & confiance" },
+      ],
+    },
+    {
+      title: "Propriétaires",
+      links: [
+        { to: publishBoatLink, label: "Mettre mon bateau en location" },
+        { to: "/ressources-proprietaires", label: "Ressources propriétaires" },
+        { to: "/assurance", label: "Assurance & garanties" },
+      ],
+    },
+  ];
+
   return (
     <footer className="bg-abysse text-white/70">
       <HorizonDivider fill="var(--color-cloud)" flip />
@@ -53,7 +56,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {COLUMNS.map((column) => (
+          {columns.map((column) => (
             <div key={column.title}>
               <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-white">
                 {column.title}
