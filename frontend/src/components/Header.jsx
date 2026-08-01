@@ -347,6 +347,10 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  // L'admin gère la plateforme, il n'a rien à faire des outils de recherche
+  // et de découverte destinés aux locataires/propriétaires (filtres
+  // destination/date, menu Découvrir, pages marketing...).
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -403,23 +407,27 @@ export default function Header() {
           >
             Accueil
           </Link>
-          <DecouvrirDropdown />
-          <Link
-            to="/inspiration"
-            className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
-          >
-            Inspiration
-          </Link>
-          <Link
-            to="/a-propos"
-            className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
-          >
-            À propos
-          </Link>
+          {!isAdmin && (
+            <>
+              <DecouvrirDropdown />
+              <Link
+                to="/inspiration"
+                className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
+              >
+                Inspiration
+              </Link>
+              <Link
+                to="/a-propos"
+                className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
+              >
+                À propos
+              </Link>
+            </>
+          )}
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          {user?.role !== "proprietaire" && (
+          {user?.role !== "proprietaire" && !isAdmin && (
             <Link
               to="/register?role=proprietaire"
               className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
@@ -446,10 +454,12 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Barre de recherche desktop */}
-      <div className="hidden justify-center px-6 pb-5 lg:flex" aria-hidden="false">
-        <SearchBar />
-      </div>
+      {/* Barre de recherche desktop — masquée pour l'admin, non concerné */}
+      {!isAdmin && (
+        <div className="hidden justify-center px-6 pb-5 lg:flex" aria-hidden="false">
+          <SearchBar />
+        </div>
+      )}
 
       {/* Menu mobile */}
       {mobileOpen && (
@@ -457,16 +467,20 @@ export default function Header() {
           id="mobile-menu"
           className="border-t border-gray-100 bg-white px-6 py-4 lg:hidden"
         >
-          <SearchBar className="mb-5" />
+          {!isAdmin && <SearchBar className="mb-5" />}
           <nav aria-label="Navigation mobile" className="flex flex-col gap-3">
             {[
               { to: "/", label: "Accueil" },
-              { to: "/boats", label: "Louer un bateau" },
-              { to: "/inspiration", label: "Inspiration" },
-              ...(user?.role !== "proprietaire"
-                ? [{ to: "/register?role=proprietaire", label: "Devenir propriétaire" }]
+              ...(!isAdmin
+                ? [
+                    { to: "/boats", label: "Louer un bateau" },
+                    { to: "/inspiration", label: "Inspiration" },
+                    ...(user?.role !== "proprietaire"
+                      ? [{ to: "/register?role=proprietaire", label: "Devenir propriétaire" }]
+                      : []),
+                    { to: "/a-propos", label: "À propos" },
+                  ]
                 : []),
-              { to: "/a-propos", label: "À propos" },
             ].map((l) => (
               <Link
                 key={l.label}

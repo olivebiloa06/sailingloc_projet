@@ -371,7 +371,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Link to="/mes-bateaux" className="rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
+            <Link to="/admin/bateaux" className="rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
               Gérer les bateaux
               <span className="mt-1 block text-xs font-normal text-gray-400">Voir et modérer toutes les annonces</span>
             </Link>

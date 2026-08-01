@@ -26,6 +26,7 @@ import Account from "../pages/Account";
 import MyBookings from "../pages/MyBookings";
 import OwnerRequests from "../pages/OwnerRequests";
 import AdminDocuments from "../pages/AdminDocuments";
+import AdminBoats from "../pages/AdminBoats";
 import OwnerBoats from "../pages/OwnerBoats";
 import BoatForm from "../pages/BoatForm";
 import ManageAvailability from "../pages/ManageAvailability";
@@ -152,6 +153,17 @@ function AppRoutes() {
             <ProtectedRoute roles={["admin"]}>
               <Layout>
                 <AdminDocuments />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/bateaux"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <Layout>
+                <AdminBoats />
               </Layout>
             </ProtectedRoute>
           }

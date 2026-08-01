@@ -31,6 +31,9 @@ router.use(authorizeRoles("admin"));
 router.get("/users", adminController.getAllUsers);
 router.patch("/users/:id/role", adminController.updateUserRole);
 
+// Bateaux
+router.get("/boats", adminController.getAllBoats);
+
 // Réservations
 router.get("/bookings", adminController.getAllBookings);
 
