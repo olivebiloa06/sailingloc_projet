@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import api from "../services/api";
 import { isValidEmail, getPasswordStrengthError } from "../utils/validators";
 import PasswordInput from "../components/PasswordInput";
+import { defaultRedirectFor } from "../utils/roleRedirect";
 
 // Documents obligatoires selon le rôle du compte créé.
 // La validation se fait côté admin (pas automatiquement) — le compte existe
@@ -133,7 +134,7 @@ function OwnerDocumentsStep({ onComplete }) {
 }
 
 export default function Register() {
-  const { register } = useAuth();
+  const { register, user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -203,6 +204,23 @@ export default function Register() {
       setSubmitting(false);
     }
   };
+
+  // Même garde-fou que Login : un utilisateur déjà connecté n'a rien à faire
+  // sur /register (URL tapée directement ou bouton "précédent"). Exception :
+  // juste après une inscription propriétaire réussie dans CETTE page
+  // (showDocStep), où l'utilisateur est déjà techniquement connecté mais
+  // doit encore voir l'étape d'envoi des documents avant d'être redirigé.
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-navy">
+        Chargement...
+      </div>
+    );
+  }
+
+  if (user && !showDocStep) {
+    return <Navigate to={defaultRedirectFor(user.role)} replace />;
+  }
 
   if (showDocStep) {
     return <OwnerDocumentsStep onComplete={() => navigate("/mon-compte", { replace: true })} />;

@@ -153,7 +153,12 @@ function AccountLink() {
   const handleLogout = async () => {
     setOpen(false);
     await logout();
-    navigate("/");
+    // replace: true — la page protégée où l'utilisateur se trouvait ne doit
+    // plus être accessible via le bouton "précédent" du navigateur une fois
+    // déconnecté (sécurité). Voir aussi le garde-fou dans ProtectedRoute :
+    // si l'historique remonte quand même plus loin sur une autre page
+    // protégée, elle renvoie vers /login plutôt que d'afficher son contenu.
+    navigate("/", { replace: true });
   };
 
   useEffect(() => {
@@ -353,7 +358,8 @@ export default function Header() {
   const handleMobileLogout = async () => {
     setMobileOpen(false);
     await logout();
-    navigate("/");
+    // replace: true — voir le commentaire équivalent dans AccountLink.handleLogout.
+    navigate("/", { replace: true });
   };
 
   // Miroir de AccountLink (menu desktop) : mêmes liens selon le rôle, pour

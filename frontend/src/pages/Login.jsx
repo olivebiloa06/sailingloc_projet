@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { isValidEmail } from "../utils/validators";
 import PasswordInput from "../components/PasswordInput";
+import { defaultRedirectFor } from "../utils/roleRedirect";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // On reconstruit pathname + search (pas juste pathname) : sinon, un
@@ -13,22 +14,27 @@ export default function Login() {
   // filtre après connexion et retomberait sur /boats tout court.
   const from = location.state?.from;
 
-  // Sans page d'origine à honorer (connexion directe depuis /login) : un
-  // locataire est envoyé directement sur le catalogue de bateaux, puisque
-  // c'est ce qu'il vient faire. Propriétaire et admin sont envoyés sur
-  // /mon-compte, qui affiche automatiquement le bon tableau de bord selon
-  // le rôle (voir Account.jsx : AdminDashboard / OwnerDashboard / RenterDashboard).
-  const DEFAULT_REDIRECT_BY_ROLE = {
-    locataire: "/boats",
-    proprietaire: "/mon-compte",
-    admin: "/mon-compte",
-  };
-  const defaultRedirectFor = (role) => DEFAULT_REDIRECT_BY_ROLE[role] || "/boats";
-
   const [form, setForm] = useState({ email: "", motDePasse: "" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Un utilisateur déjà connecté n'a rien à faire sur /login : ni en y
+  // tapant l'URL directement, ni en y arrivant via le bouton "précédent" du
+  // navigateur (ex. après avoir cliqué sur "Connexion" par erreur). Il est
+  // renvoyé directement vers sa page principale, tant qu'il ne s'est pas
+  // déconnecté lui-même.
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-navy">
+        Chargement...
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to={defaultRedirectFor(user.role)} replace />;
+  }
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

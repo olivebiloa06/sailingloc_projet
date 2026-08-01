@@ -35,13 +35,7 @@ import BookingCancel from "../pages/BookingCancel";
 import NotFound from "../pages/NotFound";
 import ProtectedRoute from "../components/ProtectedRoute";
 import CookieConsent from "../components/CookieConsent";
-
-// Page "principale" de chaque rôle une fois connecté — voir HomeGate.
-const HOME_REDIRECT_BY_ROLE = {
-  locataire: "/boats",
-  proprietaire: "/mon-compte",
-  admin: "/mon-compte",
-};
+import { defaultRedirectFor } from "../utils/roleRedirect";
 
 // La landing page (marketing, "Explore la mer autrement") n'a de sens que
 // pour un visiteur non connecté : un utilisateur déjà authentifié qui tape
@@ -60,7 +54,7 @@ function HomeGate() {
   }
 
   if (user) {
-    return <Navigate to={HOME_REDIRECT_BY_ROLE[user.role] || "/boats"} replace />;
+    return <Navigate to={defaultRedirectFor(user.role)} replace />;
   }
 
   return (
