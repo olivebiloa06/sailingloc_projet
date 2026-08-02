@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import { translations } from "../translations";
 
 const RATES = { EUR: 1, USD: 1.08, GBP: 0.86, CHF: 0.96, CAD: 1.47 };
 
@@ -29,20 +30,16 @@ export function LanguageCurrencyProvider({ children }) {
   const save = (lang, curr) =>
     localStorage.setItem("sl_prefs", JSON.stringify({ language: lang, currency: curr }));
 
-  // Changement de langue → sauvegarde + rechargement complet de la page
-  // pour que tous les composants relisent la nouvelle langue depuis localStorage.
   const changeLanguage = (lang) => {
     save(lang, currency);
     window.location.reload();
   };
 
-  // Changement de devise → React re-render suffit, pas besoin de recharger.
   const changeCurrency = (curr) => {
     setCurrency(curr);
     save(language, curr);
   };
 
-  // Convertit un prix en euros vers la devise choisie.
   const formatPrice = (euroAmount) => {
     if (euroAmount == null) return "";
     const c = CURRENCIES.find((x) => x.code === currency);
@@ -50,10 +47,12 @@ export function LanguageCurrencyProvider({ children }) {
     return `${converted} ${c?.symbol || "€"}`;
   };
 
+  const t = (key) => translations[language]?.[key] || key;
+
   return (
     <LanguageCurrencyContext.Provider value={{
       language, currency, changeLanguage, changeCurrency,
-      formatPrice, CURRENCIES, LANGUAGES,
+      formatPrice, CURRENCIES, LANGUAGES, t,
     }}>
       {children}
     </LanguageCurrencyContext.Provider>
