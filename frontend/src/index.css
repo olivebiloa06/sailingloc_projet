@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/*
+  Charte graphique SailingLoc (cf. cahier des charges, partie G. Identité visuelle)
+  - Bleu marine #0A2A43 : mer, confiance, stabilité
+  - Bleu clair  #1DA1F2 : modernité, technologie, navigation digitale
+  - Blanc / gris clair  : pureté, lisibilité, UI secondaire
+  - Titres : Montserrat / Poppins — Texte courant : Open Sans / Roboto
+
+  Deux tokens ajoutés pour le header/footer/accueil :
+  - --color-abysse : un navy plus profond, réservé au footer.
+  - --color-sable : seule touche chaude de la palette, utilisée avec
+    parcimonie (numéros, halos animés du hero).
+*/
+@theme {
+  --color-navy: #0a2a43;
+  --color-navy-light: #123a5c;
+  --color-abysse: #061b2e;
+  --color-sky: #1da1f2;
+  --color-cloud: #f5f7fa;
+  --color-sable: #d9a86c;
+
+  --font-heading: "Montserrat", "Poppins", system-ui, sans-serif;
+  --font-sans: "Open Sans", "Roboto", system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+}
+
+/*
+  Animations du hero — des halos de lumière qui dérivent lentement derrière
+  le texte, pour donner un fond "vivant" sans dépendre de vraies photos.
+  Le texte apparaît en fondu-montant à l'arrivée sur la page.
+*/
+@keyframes drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.12); }
+}
+
+@keyframes drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, 25px) scale(1.08); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-drift-1 {
+  animation: drift-1 16s ease-in-out infinite;
+}
+
+.animate-drift-2 {
+  animation: drift-2 20s ease-in-out infinite;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.9s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift-1,
+  .animate-drift-2,
+  .animate-fade-up {
+    animation: none;
+  }
+}

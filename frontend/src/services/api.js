@@ -1,0 +1,80 @@
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  // Indispensable pour que le cookie HttpOnly du refresh token soit envoyé
+  // et reçu : sans ça, /auth/refresh et /auth/logout ne voient jamais le
+  // cookie (même en local, localhost:5173 et localhost:5000 sont deux
+  // origines différentes pour le navigateur).
+  withCredentials: true,
+});
+
+// L'access token n'est plus stocké en localStorage : il vit uniquement en
+// mémoire (cette variable de module). À chaque rechargement de page, on le
+// récupère via /auth/refresh grâce au cookie HttpOnly (inaccessible en JS,
+// donc inaccessible à un éventuel script malveillant en cas de XSS).
+let accessToken = null;
+
+export function setAccessToken(token) {
+  accessToken = token;
+}
+
+export function getAccessToken() {
+  return accessToken;
+}
+
+api.interceptors.request.use((config) => {
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
+});
+
+// Évite de déclencher plusieurs appels /auth/refresh en parallèle si
+// plusieurs requêtes échouent en même temps (ex: deux appels API lancés en
+// même temps juste après l'expiration de l'access token).
+let refreshPromise = null;
+
+function isAuthEndpoint(url = "") {
+  return (
+    url.includes("/auth/login") ||
+    url.includes("/auth/register") ||
+    url.includes("/auth/refresh")
+  );
+}
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const { config, response } = error;
+
+    // Si l'access token a expiré (401) sur une route qui n'est pas elle-même
+    // une route d'auth, on tente UNE fois un refresh silencieux via le
+    // cookie, puis on rejoue la requête originale avec le nouveau token.
+    if (response?.status === 401 && config && !isAuthEndpoint(config.url) && !config._retried) {
+      config._retried = true;
+
+      try {
+        if (!refreshPromise) {
+          refreshPromise = api.post("/auth/refresh").finally(() => {
+            refreshPromise = null;
+          });
+        }
+
+        const { data } = await refreshPromise;
+        setAccessToken(data.accessToken);
+        config.headers.Authorization = `Bearer ${data.accessToken}`;
+        return api(config);
+      } catch {
+        setAccessToken(null);
+        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default api;

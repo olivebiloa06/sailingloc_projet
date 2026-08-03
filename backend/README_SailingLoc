@@ -1,0 +1,697 @@
+# SailingLoc — API Backend Node.js / Express / PostgreSQL
+
+SailingLoc est une API backend de location de bateaux. Le projet gère l’authentification, les rôles utilisateurs, les bateaux, les disponibilités, les réservations, les paiements, les contrats, les documents, les avis, les uploads d’images et un dashboard propriétaire/admin.
+
+## Technologies utilisées
+
+- Node.js
+- Express.js
+- PostgreSQL
+- Sequelize ORM
+- JWT pour l’authentification
+- bcryptjs pour le hachage des mots de passe
+- Multer pour l’upload de fichiers
+- Stripe pour le paiement
+- Nodemailer pour l’envoi d’e-mails
+- Swagger pour la documentation API
+- Docker / Docker Compose
+- pgAdmin pour gérer la base de données
+- Postman pour tester l’API
+
+---
+
+## Prérequis
+
+Avant de récupérer le projet, installer :
+
+- Node.js LTS
+- npm
+- Git
+- Docker Desktop
+- pgAdmin 4, ou utiliser pgAdmin via Docker
+- Postman
+- VS Code
+
+Vérifier les installations :
+
+```bash
+node -v
+npm -v
+git --version
+docker --version
+```
+
+---
+
+## Récupération du projet
+
+```bash
+git clone <URL_DU_REPOSITORY>
+cd <NOM_DU_PROJET>
+```
+
+Exemple :
+
+```bash
+git clone https://github.com/votre-compte/sailingloc-backend.git
+cd sailingloc-backend
+```
+
+---
+
+## Structure du projet
+
+```text
+src/
+├── config/
+│   ├── database.js
+│   └── swagger.js
+├── controllers/
+│   ├── adminController.js
+│   ├── authController.js
+│   ├── availabilityController.js
+│   ├── boatController.js
+│   ├── bookingController.js
+│   ├── contractController.js
+│   ├── dashboardController.js
+│   ├── documentController.js
+│   ├── paymentController.js
+│   ├── reviewController.js
+│   └── uploadController.js
+├── middlewares/
+│   ├── authMiddleware.js
+│   ├── roleMiddleware.js
+│   └── uploadMiddleware.js
+├── models/
+│   ├── Availability.js
+│   ├── Boat.js
+│   ├── Booking.js
+│   ├── Contract.js
+│   ├── Document.js
+│   ├── Payment.js
+│   ├── Review.js
+│   ├── User.js
+│   └── index.js
+├── routes/
+│   ├── adminRoutes.js
+│   ├── authRoutes.js
+│   ├── availabilityRoutes.js
+│   ├── boatRoutes.js
+│   ├── bookingRoutes.js
+│   ├── contractRoutes.js
+│   ├── dashboardRoutes.js
+│   ├── documentRoutes.js
+│   ├── paymentRoutes.js
+│   ├── reviewRoutes.js
+│   └── uploadRoutes.js
+├── services/
+│   ├── emailService.js
+│   └── stripeService.js
+└── server.js
+```
+
+---
+
+## Installation des dépendances
+
+Si le projet contient déjà un `package.json`, lancer :
+
+```bash
+npm install
+```
+
+Si le projet ne contient pas encore de `package.json`, créer le fichier avec :
+
+```bash
+npm init -y
+```
+
+Puis installer les dépendances nécessaires :
+
+```bash
+npm install express cors dotenv sequelize pg pg-hstore bcryptjs jsonwebtoken multer stripe nodemailer swagger-jsdoc swagger-ui-express helmet express-rate-limit morgan
+npm install --save-dev nodemon
+```
+
+Ajouter ensuite ces scripts dans `package.json` :
+
+```json
+{
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  }
+}
+```
+
+---
+
+## Configuration des variables d’environnement
+
+Créer un fichier `.env` à la racine du projet :
+
+```env
+PORT=5000
+
+DB_HOST=localhost
+DB_PORT=5433
+DB_NAME=sailingloc_dev
+DB_USER=postgres
+DB_PASSWORD=postgres123
+
+JWT_SECRET=change_this_secret_key
+JWT_EXPIRES_IN=7d
+
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=olivebiloa06@gmail.com
+EMAIL_PASSWORD=postgres123
+EMAIL_FROM=SailingLoc <olivebiloa06@gmail.com>
+
+FRONTEND_URL=http://localhost:3000
+```
+
+Important : ne jamais pousser le fichier `.env` sur GitHub.
+
+Créer un fichier `.gitignore` :
+
+```gitignore
+node_modules/
+.env
+uploads/
+npm-debug.log
+.DS_Store
+```
+
+---
+
+## Lancer PostgreSQL avec Docker
+
+Créer un fichier `docker-compose.yml` à la racine :
+
+```yaml
+services:
+  postgres:
+    image: postgres:16
+    container_name: sailingloc_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: sailingloc_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: sailingloc_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sailingloc.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+```
+
+Démarrer les services :
+
+```bash
+docker compose up -d
+```
+
+Vérifier que les conteneurs sont lancés :
+
+```bash
+docker ps
+```
+
+Arrêter les services :
+
+```bash
+docker compose down
+```
+
+---
+
+## Connexion à pgAdmin
+
+Ouvrir :
+
+```text
+http://localhost:5050
+```
+
+Identifiants pgAdmin :
+
+```text
+Email : admin@sailingloc.com
+Mot de passe : admin
+```
+
+Ajouter un nouveau serveur dans pgAdmin :
+
+### Onglet General
+
+```text
+Name : SailingLoc DB
+```
+
+### Onglet Connection
+
+Si pgAdmin est lancé via Docker Compose :
+
+```text
+Host name/address : postgres
+Port : 5432
+Maintenance database : sailingloc_dev
+Username : postgres
+Password : postgres123
+```
+
+Si pgAdmin est installé directement sur ton ordinateur :
+
+```text
+Host name/address : localhost
+Port : 5433
+Maintenance database : sailingloc_dev
+Username : postgres
+Password : postgres123
+```
+
+---
+
+## Lancer le serveur backend
+
+En mode développement :
+
+```bash
+npm run dev
+```
+
+En mode classique :
+
+```bash
+npm start
+```
+
+Si tout fonctionne, le terminal doit afficher :
+
+```text
+Connexion PostgreSQL réussie.
+Tables synchronisées avec PostgreSQL.
+Serveur lancé sur le port 5000
+```
+
+Tester dans le navigateur :
+
+```text
+http://localhost:5000
+```
+
+Réponse attendue :
+
+```text
+API SailingLoc fonctionne !
+```
+
+---
+
+## Documentation Swagger
+
+Une fois le serveur lancé, ouvrir :
+
+```text
+http://localhost:5000/api-docs
+```
+
+Swagger permet de visualiser et tester les routes de l’API.
+
+---
+
+## Tester avec Postman
+
+Créer un environnement Postman avec les variables suivantes :
+
+```text
+base_url = http://localhost:5000
+access_token = votre_token_jwt
+```
+
+Pour les routes protégées, ajouter dans l’onglet Authorization :
+
+```text
+Type : Bearer Token
+Token : {{access_token}}
+```
+
+Ou dans Headers :
+
+```text
+Authorization: Bearer {{access_token}}
+```
+
+---
+
+## Routes principales de l’API
+
+### Authentification
+
+```http
+POST /api/auth/register
+POST /api/auth/login
+GET  /api/auth/profile
+GET  /api/auth/owner-only
+GET  /api/auth/admin-only
+```
+
+Exemple register :
+
+```json
+{
+  "firstName": "Olive",
+  "lastName": "Biloa",
+  "email": "olive@example.com",
+  "password": "Password123!",
+  "role": "locataire"
+}
+```
+
+Exemple login :
+
+```json
+{
+  "email": "olive@example.com",
+  "password": "Password123!"
+}
+```
+
+Rôles possibles selon le projet :
+
+```text
+locataire
+proprietaire
+admin
+```
+
+---
+
+### Bateaux
+
+```http
+GET    /api/boats
+GET    /api/boats/:id
+POST   /api/boats
+PUT    /api/boats/:id
+DELETE /api/boats/:id
+```
+
+Les routes `POST`, `PUT` et `DELETE` sont réservées aux utilisateurs connectés avec rôle `proprietaire` ou `admin`.
+
+---
+
+### Disponibilités
+
+```http
+GET    /api/availabilities/boat/:boatId
+POST   /api/availabilities
+PUT    /api/availabilities/:id
+DELETE /api/availabilities/:id
+```
+
+---
+
+### Réservations
+
+```http
+POST /api/bookings
+GET  /api/bookings/mes-reservations
+PUT  /api/bookings/cancel/:id
+```
+
+---
+
+### Paiements
+
+```http
+POST /api/payments/pay/:bookingId
+POST /api/payments/stripe/create-session/:bookingId
+GET  /api/payments/my-payments
+POST /api/payments/stripe/webhook
+```
+
+---
+
+### Contrats
+
+```http
+POST /api/contracts/generate/:bookingId
+GET  /api/contracts/my-contracts
+GET  /api/contracts/:id
+```
+
+---
+
+### Documents
+
+```http
+POST   /api/documents
+GET    /api/documents/my-documents
+GET    /api/documents/boat/:boatId
+PATCH  /api/documents/:id/validate
+DELETE /api/documents/:id
+```
+
+---
+
+### Avis
+
+```http
+POST   /api/reviews
+GET    /api/reviews/boat/:boatId
+GET    /api/reviews/my-reviews
+DELETE /api/reviews/:id
+```
+
+---
+
+### Uploads
+
+```http
+POST   /api/uploads/boat/:boatId
+DELETE /api/uploads/boat/:boatId
+```
+
+Pour tester l’upload dans Postman :
+
+- Méthode : `POST`
+- URL : `{{base_url}}/api/uploads/boat/:boatId`
+- Authorization : Bearer Token
+- Body : `form-data`
+- Clé : `image`
+- Type : `File`
+- Valeur : choisir une image
+
+---
+
+### Dashboard propriétaire / admin
+
+```http
+GET /api/dashboard/owner
+GET /api/dashboard/owner/stats
+```
+
+---
+
+### Admin
+
+Routes réservées au rôle `admin` :
+
+```http
+GET   /api/admin/users
+PATCH /api/admin/users/:id/role
+GET   /api/admin/bookings
+GET   /api/admin/payments
+GET   /api/admin/documents
+GET   /api/admin/reviews
+```
+
+---
+
+## Workflow recommandé pour un collaborateur
+
+1. Cloner le projet.
+2. Installer les dépendances avec `npm install`.
+3. Créer le fichier `.env` à partir du modèle fourni.
+4. Lancer PostgreSQL et pgAdmin avec `docker compose up -d`.
+5. Vérifier la base dans pgAdmin.
+6. Lancer le serveur avec `npm run dev`.
+7. Tester `http://localhost:5000`.
+8. Tester les routes dans Postman.
+9. Consulter Swagger sur `http://localhost:5000/api-docs`.
+
+---
+
+## Commandes utiles Docker
+
+Voir les conteneurs actifs :
+
+```bash
+docker ps
+```
+
+Voir les logs PostgreSQL :
+
+```bash
+docker logs sailingloc_postgres
+```
+
+Voir les logs pgAdmin :
+
+```bash
+docker logs sailingloc_pgadmin
+```
+
+Arrêter les conteneurs :
+
+```bash
+docker compose down
+```
+
+Supprimer les conteneurs et les volumes :
+
+```bash
+docker compose down -v
+```
+
+Attention : `docker compose down -v` supprime les données de la base.
+
+---
+
+## Commandes utiles PostgreSQL
+
+Entrer dans le conteneur PostgreSQL :
+
+```bash
+docker exec -it sailingloc_postgres psql -U postgres -d sailingloc_db
+```
+
+Lister les tables :
+
+```sql
+\dt
+```
+
+Quitter psql :
+
+```sql
+\q
+```
+
+---
+
+## Problèmes fréquents
+
+### Le port 5432 est déjà utilisé
+
+Dans ce projet, PostgreSQL est exposé sur le port `5433` côté ordinateur :
+
+```text
+localhost:5433 -> conteneur:5432
+```
+
+Vérifier que `.env` contient bien :
+
+```env
+DB_PORT=5433
+```
+
+### Le serveur ne se connecte pas à PostgreSQL
+
+Vérifier :
+
+```bash
+docker ps
+```
+
+Puis contrôler les variables `.env` :
+
+```env
+DB_HOST=localhost
+DB_PORT=5433
+DB_NAME=sailingloc_dev
+DB_USER=postgres
+DB_PASSWORD=postgres123
+```
+
+### Les tables ne sont pas créées
+
+Le fichier `src/server.js` utilise :
+
+```js
+sequelize.sync({ alter: true })
+```
+
+Les tables sont créées automatiquement au lancement du serveur si la connexion à la base fonctionne.
+
+### Erreur JWT
+
+Vérifier que `.env` contient :
+
+```env
+JWT_SECRET=change_this_secret_key
+```
+
+### Upload d’image impossible
+
+Vérifier que le dossier `uploads/` existe à la racine du projet. S’il n’existe pas :
+
+```bash
+mkdir uploads
+```
+
+---
+
+## Bonnes pratiques Git
+
+Créer une branche avant de travailler :
+
+```bash
+git checkout -b feature/nom-fonctionnalite
+```
+
+Ajouter les fichiers :
+
+```bash
+git add .
+```
+
+Faire un commit clair :
+
+```bash
+git commit -m "feat: ajout de la gestion des réservations"
+```
+
+Pousser la branche :
+
+```bash
+git push origin feature/nom-fonctionnalite
+```
+
+Puis créer une Pull Request vers la branche principale.
+
+---
+
+## Auteur
+
+Projet développé dans le cadre d’un projet backend Node.js / Express / PostgreSQL.
+
