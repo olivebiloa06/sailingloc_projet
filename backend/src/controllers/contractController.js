@@ -35,13 +35,19 @@ async function generateContractForBooking(bookingId) {
     owner: booking.Boat.User,
   });
 
-  return Contract.create({
-    bookingId,
-    urlPdf: filename,
-    statut: "genere",
-    signatureElectronique: false,
-    dateGeneration: new Date(),
-  });
+  try {
+    return await Contract.create({
+      bookingId,
+      urlPdf: filename,
+      statut: "genere",
+      signatureElectronique: false,
+      dateGeneration: new Date(),
+    });
+  } catch (error) {
+
+    if (error.name !== "SequelizeUniqueConstraintError") throw error;
+    return Contract.findOne({ where: { bookingId } });
+  }
 }
 
 // =========================

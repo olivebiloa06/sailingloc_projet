@@ -5,40 +5,58 @@ import { useLanguageCurrency } from "../context/LanguageCurrencyContext";
 import LanguageCurrencyPicker from "./LanguageCurrencyPicker";
 import BoatMark from "./BoatMark";
 import logoImg from "../assets/logo.jpg";
+import {
+  AnchorIcon,
+  CatamaranIcon,
+  SpeedboatIcon,
+  WheelIcon,
+  IslandIcon,
+  SunIcon,
+  MapPinIcon,
+  IslandsIcon,
+  WavesIcon,
+  MegaphoneIcon,
+  ClipboardIcon,
+  CompassIcon,
+  InfoIcon,
+} from "./DiscoverIcons";
+import { UserIcon, CalendarIcon, ChatIcon, ShieldIcon, LogoutIcon } from "./AccountIcons";
+import { usePublishBoatLink } from "../hooks/usePublishBoatLink";
 
-const DECOUVRIR_MENU = [
+
+const getDecouvrirMenu = (publishBoatLink) => [
   {
     section: "Louer un bateau",
     items: [
-      { to: "/boats", label: "Tous les bateaux", icon: "⛵", desc: "Explorer toutes les annonces disponibles" },
-      { to: "/boats?type=voilier", label: "Voiliers", icon: "🌊", desc: "Navigation à la voile, avec ou sans skipper" },
-      { to: "/boats?type=catamaran", label: "Catamarans", icon: "🏖️", desc: "Stabilité et confort pour toute la famille" },
-      { to: "/boats?type=bateau_moteur", label: "Bateaux à moteur", icon: "⚡", desc: "Rapides et polyvalents" },
-      { to: "/boats?avecSkipper=true", label: "Avec skipper", icon: "🧭", desc: "Profitez sans vous soucier de la navigation" },
+      { to: "/boats", label: "Tous les bateaux", icon: AnchorIcon, desc: "Explorer toutes les annonces disponibles" },
+      { to: "/boats?type=voilier", label: "Voiliers", icon: BoatMark, desc: "Navigation à la voile, avec ou sans skipper" },
+      { to: "/boats?type=catamaran", label: "Catamarans", icon: CatamaranIcon, desc: "Stabilité et confort pour toute la famille" },
+      { to: "/boats?type=bateau_moteur", label: "Bateaux à moteur", icon: SpeedboatIcon, desc: "Rapides et polyvalents" },
+      { to: "/boats?avecSkipper=true", label: "Avec skipper", icon: WheelIcon, desc: "Profitez sans vous soucier de la navigation" },
     ],
   },
   {
     section: "Top destinations",
     items: [
-      { to: "/boats?localisation=Corse", label: "Corse", icon: "🏝️", desc: "Eaux cristallines, criques sauvages" },
-      { to: "/boats?localisation=C%C3%B4te%20d'Azur", label: "Côte d'Azur", icon: "☀️", desc: "Saint-Tropez, Cannes, Nice" },
-      { to: "/boats?localisation=Morbihan", label: "Golfe du Morbihan", icon: "🗺️", desc: "40 îles à explorer" },
-      { to: "/boats?localisation=Croatie", label: "Croatie", icon: "🌅", desc: "1000 îles dans l'Adriatique" },
-      { to: "/boats?localisation=Baleares", label: "Baléares", icon: "🐠", desc: "Majorque, Ibiza, Formentera" },
+      { to: "/boats?localisation=Corse", label: "Corse", icon: IslandIcon, desc: "Eaux cristallines, criques sauvages" },
+      { to: "/boats?localisation=C%C3%B4te%20d'Azur", label: "Côte d'Azur", icon: SunIcon, desc: "Saint-Tropez, Cannes, Nice" },
+      { to: "/boats?localisation=Morbihan", label: "Golfe du Morbihan", icon: MapPinIcon, desc: "40 îles à explorer" },
+      { to: "/boats?localisation=Croatie", label: "Croatie", icon: IslandsIcon, desc: "1000 îles dans l'Adriatique" },
+      { to: "/boats?localisation=Baleares", label: "Baléares", icon: WavesIcon, desc: "Majorque, Ibiza, Formentera" },
     ],
   },
   {
     section: "Pour les propriétaires",
     items: [
-      { to: "/register?role=proprietaire", label: "Mettre mon bateau en location", icon: "🔑", desc: "Publie ton annonce gratuitement" },
-      { to: "/mon-compte", label: "Gérer mes annonces", icon: "📋", desc: "Disponibilités, réservations, revenus" },
+      { to: publishBoatLink, label: "Mettre mon bateau en location", icon: MegaphoneIcon, desc: "Publie ton annonce gratuitement" },
+      { to: "/mon-compte", label: "Gérer mes annonces", icon: ClipboardIcon, desc: "Disponibilités, réservations, revenus" },
     ],
   },
   {
     section: "Découverte & guides",
     items: [
-      { to: "/inspiration", label: "Inspiration", icon: "✨", desc: "Actualités nautiques & guides de voyage" },
-      { to: "/a-propos", label: "À propos de SailingLoc", icon: "ℹ️", desc: "Notre mission, notre équipe" },
+      { to: "/inspiration", label: "Inspiration", icon: CompassIcon, desc: "Actualités nautiques & guides de voyage" },
+      { to: "/a-propos", label: "À propos de SailingLoc", icon: InfoIcon, desc: "Notre mission, notre équipe" },
     ],
   },
 ];
@@ -47,6 +65,8 @@ function DecouvrirDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const btnRef = useRef(null);
+  const publishBoatLink = usePublishBoatLink();
+  const decouvrirMenu = getDecouvrirMenu(publishBoatLink);
 
   useEffect(() => {
     const handler = (e) => {
@@ -88,7 +108,7 @@ function DecouvrirDropdown() {
           className="absolute left-0 top-full z-50 mt-3 w-[680px] -translate-x-1/4 rounded-2xl border border-gray-100 bg-white shadow-2xl"
         >
           <div className="grid grid-cols-2 gap-0 p-4">
-            {DECOUVRIR_MENU.map((group) => (
+            {decouvrirMenu.map((group) => (
               <div key={group.section} className="p-3">
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
                   {group.section}
@@ -101,7 +121,7 @@ function DecouvrirDropdown() {
                       onClick={() => setOpen(false)}
                       className="flex items-start gap-3 rounded-xl p-2.5 transition hover:bg-cloud focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-1"
                     >
-                      <span className="mt-0.5 text-xl leading-none" aria-hidden="true">{item.icon}</span>
+                      <item.icon className="mt-0.5 h-5 w-5 shrink-0 text-sky" />
                       <div>
                         <p className="text-sm font-semibold text-navy">{item.label}</p>
                         <p className="text-xs text-gray-400">{item.desc}</p>
@@ -125,9 +145,21 @@ function DecouvrirDropdown() {
 
 function AccountLink() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const btnRef = useRef(null);
+
+  const handleLogout = async () => {
+    setOpen(false);
+    await logout();
+    // replace: true — la page protégée où l'utilisateur se trouvait ne doit
+    // plus être accessible via le bouton "précédent" du navigateur une fois
+    // déconnecté (sécurité). Voir aussi le garde-fou dans ProtectedRoute :
+    // si l'historique remonte quand même plus loin sur une autre page
+    // protégée, elle renvoie vers /login plutôt que d'afficher son contenu.
+    navigate("/", { replace: true });
+  };
 
   useEffect(() => {
     const handler = (e) => {
@@ -204,23 +236,35 @@ function AccountLink() {
           </div>
           <div className="p-2">
             {[
-              { to: "/mon-compte", label: "Mon compte", icon: "👤", show: true },
-              { to: "/mes-bateaux", label: "Mes bateaux", icon: "⛵", show: user.role === "proprietaire" },
-              { to: "/mes-reservations", label: "Mes réservations", icon: "📅", show: user.role !== "admin" },
-              { to: "/mes-messages", label: "Messages", icon: "💬", show: true },
-              { to: "/admin/documents", label: "Administration", icon: "🛡️", show: user.role === "admin", className: "text-sky" },
+              { to: "/mon-compte", label: "Mon compte", icon: UserIcon, show: true },
+              { to: "/mes-bateaux", label: "Mes bateaux", icon: BoatMark, show: user.role === "proprietaire" },
+              { to: "/mes-reservations", label: "Mes réservations", icon: CalendarIcon, show: user.role !== "admin" },
+              { to: "/mes-messages", label: "Messages", icon: ChatIcon, show: true },
+              { to: "/admin/documents", label: "Administration", icon: ShieldIcon, show: user.role === "admin", className: "text-sky" },
             ].filter((l) => l.show).map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
                 role="menuitem"
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-cloud focus:outline-none focus:ring-2 focus:ring-sky ${l.className || "text-gray-700"}`}
+                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-cloud focus:outline-none focus:ring-2 focus:ring-sky ${l.className || "text-gray-700"}`}
               >
-                <span aria-hidden="true">{l.icon}</span>
+                <l.icon className="h-4 w-4 shrink-0" />
                 {l.label}
               </Link>
             ))}
+
+            <div className="my-1 border-t border-gray-100" />
+
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-gray-700 hover:bg-cloud focus:outline-none focus:ring-2 focus:ring-sky"
+            >
+              <LogoutIcon className="h-4 w-4 shrink-0" />
+              Déconnexion
+            </button>
           </div>
         </div>
       )}
@@ -301,6 +345,12 @@ function SearchBar({ className = "" }) {
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  // L'admin gère la plateforme, il n'a rien à faire des outils de recherche
+  // et de découverte destinés aux locataires/propriétaires (filtres
+  // destination/date, menu Découvrir, pages marketing...).
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -308,6 +358,26 @@ export default function Header() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const handleMobileLogout = async () => {
+    setMobileOpen(false);
+    await logout();
+    // replace: true — voir le commentaire équivalent dans AccountLink.handleLogout.
+    navigate("/", { replace: true });
+  };
+
+  // Miroir de AccountLink (menu desktop) : mêmes liens selon le rôle, pour
+  // que le menu mobile reflète lui aussi l'état de connexion au lieu de
+  // toujours afficher "Connexion" comme si personne n'était authentifié.
+  const mobileAccountLinks = user
+    ? [
+        { to: "/mon-compte", label: "Mon compte", icon: UserIcon },
+        ...(user.role === "proprietaire" ? [{ to: "/mes-bateaux", label: "Mes bateaux", icon: BoatMark }] : []),
+        ...(user.role !== "admin" ? [{ to: "/mes-reservations", label: "Mes réservations", icon: CalendarIcon }] : []),
+        { to: "/mes-messages", label: "Messages", icon: ChatIcon },
+        ...(user.role === "admin" ? [{ to: "/admin/documents", label: "Administration", icon: ShieldIcon }] : []),
+      ]
+    : [{ to: "/login", label: "Connexion", icon: UserIcon }];
 
   return (
     <header
@@ -337,28 +407,34 @@ export default function Header() {
           >
             Accueil
           </Link>
-          <DecouvrirDropdown />
-          <Link
-            to="/inspiration"
-            className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
-          >
-            Inspiration
-          </Link>
-          <Link
-            to="/a-propos"
-            className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
-          >
-            À propos
-          </Link>
+          {!isAdmin && (
+            <>
+              <DecouvrirDropdown />
+              <Link
+                to="/inspiration"
+                className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
+              >
+                Inspiration
+              </Link>
+              <Link
+                to="/a-propos"
+                className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
+              >
+                À propos
+              </Link>
+            </>
+          )}
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
-            to="/register?role=proprietaire"
-            className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
-          >
-            Devenir propriétaire
-          </Link>
+          {user?.role !== "proprietaire" && !isAdmin && (
+            <Link
+              to="/register?role=proprietaire"
+              className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
+            >
+              Devenir propriétaire
+            </Link>
+          )}
           <AccountLink />
           <LanguageCurrencyPicker />
         </div>
@@ -378,10 +454,12 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Barre de recherche desktop */}
-      <div className="hidden justify-center px-6 pb-5 lg:flex" aria-hidden="false">
-        <SearchBar />
-      </div>
+      {/* Barre de recherche desktop — masquée pour l'admin, non concerné */}
+      {!isAdmin && (
+        <div className="hidden justify-center px-6 pb-5 lg:flex" aria-hidden="false">
+          <SearchBar />
+        </div>
+      )}
 
       {/* Menu mobile */}
       {mobileOpen && (
@@ -389,15 +467,20 @@ export default function Header() {
           id="mobile-menu"
           className="border-t border-gray-100 bg-white px-6 py-4 lg:hidden"
         >
-          <SearchBar className="mb-5" />
+          {!isAdmin && <SearchBar className="mb-5" />}
           <nav aria-label="Navigation mobile" className="flex flex-col gap-3">
             {[
               { to: "/", label: "Accueil" },
-              { to: "/boats", label: "Louer un bateau" },
-              { to: "/inspiration", label: "Inspiration" },
-              { to: "/register?role=proprietaire", label: "Devenir propriétaire" },
-              { to: "/a-propos", label: "À propos" },
-              { to: "/login", label: "Connexion" },
+              ...(!isAdmin
+                ? [
+                    { to: "/boats", label: "Louer un bateau" },
+                    { to: "/inspiration", label: "Inspiration" },
+                    ...(user?.role !== "proprietaire"
+                      ? [{ to: "/register?role=proprietaire", label: "Devenir propriétaire" }]
+                      : []),
+                    { to: "/a-propos", label: "À propos" },
+                  ]
+                : []),
             ].map((l) => (
               <Link
                 key={l.label}
@@ -408,6 +491,37 @@ export default function Header() {
                 {l.label}
               </Link>
             ))}
+
+            <div className="my-1 border-t border-gray-100" />
+
+            {user && (
+              <p className="py-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                {user.prenom} {user.nom} · {user.role}
+              </p>
+            )}
+
+            {mobileAccountLinks.map((l) => (
+              <Link
+                key={l.label}
+                to={l.to}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2.5 py-1 text-sm font-medium text-gray-700 hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky rounded"
+              >
+                <l.icon className="h-4 w-4 shrink-0" />
+                {l.label}
+              </Link>
+            ))}
+
+            {user && (
+              <button
+                type="button"
+                onClick={handleMobileLogout}
+                className="flex items-center gap-2.5 py-1 text-left text-sm font-medium text-gray-700 hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky rounded"
+              >
+                <LogoutIcon className="h-4 w-4 shrink-0" />
+                Déconnexion
+              </button>
+            )}
           </nav>
         </div>
       )}

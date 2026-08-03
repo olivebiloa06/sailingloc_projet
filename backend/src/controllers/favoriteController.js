@@ -22,11 +22,20 @@ exports.toggleFavorite = async (req, res) => {
     const existing = await Favorite.findOne({ where: { userId: req.user.id, boatId } });
 
     if (existing) {
-      await existing.destroy();
+      // Supprime toutes les lignes correspondantes (pas juste la première) :
+      // si un double-clic avait par le passé créé un doublon avant la
+      // contrainte unique ci-dessous, ce toggle nettoie l'état au lieu de
+      // laisser un favori fantôme.
+      await Favorite.destroy({ where: { userId: req.user.id, boatId } });
       return res.status(200).json({ liked: false });
     }
 
-    await Favorite.create({ userId: req.user.id, boatId });
+    try {
+      await Favorite.create({ userId: req.user.id, boatId });
+    } catch (createError) {
+  
+      if (createError.name !== "SequelizeUniqueConstraintError") throw createError;
+    }
     return res.status(201).json({ liked: true });
   } catch (error) {
     return res.status(500).json({ message: error.message });

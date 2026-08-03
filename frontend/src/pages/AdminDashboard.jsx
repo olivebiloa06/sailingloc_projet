@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 
@@ -236,8 +236,7 @@ function formatDate(v) {
 }
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [stats, setStats] = useState(null);
   const [pendingDocs, setPendingDocs] = useState([]);
@@ -314,8 +313,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = async () => { await logout(); navigate("/", { replace: true }); };
-
   const TABS = [
     { key: "kpi", label: "Tableau de bord" },
     { key: "docs", label: `Documents${stats?.pendingDocs > 0 ? ` (${stats.pendingDocs})` : ""}` },
@@ -335,9 +332,6 @@ export default function AdminDashboard() {
           </h1>
           <p className="mt-1 text-sm text-gray-500">Connecté en tant qu'admin · {user?.email}</p>
         </div>
-        <button onClick={handleLogout} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-navy">
-          Se déconnecter
-        </button>
       </div>
 
       {/* Tabs */}
@@ -377,7 +371,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Link to="/mes-bateaux" className="rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
+            <Link to="/admin/bateaux" className="rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
               Gérer les bateaux
               <span className="mt-1 block text-xs font-normal text-gray-400">Voir et modérer toutes les annonces</span>
             </Link>

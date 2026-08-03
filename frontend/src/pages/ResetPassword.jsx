@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 import { getPasswordStrengthError } from "../utils/validators";
+import PasswordInput from "../components/PasswordInput";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -89,15 +90,14 @@ export default function ResetPassword() {
               )}
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-navy">
+                <label htmlFor="motDePasse" className="mb-1 block text-sm font-medium text-navy">
                   Nouveau mot de passe
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
+                  id="motDePasse"
                   autoComplete="new-password"
                   value={form.motDePasse}
                   onChange={(e) => setForm((p) => ({ ...p, motDePasse: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
                 />
                 <p className="mt-1 text-xs text-gray-400">
                   8 caractères minimum, une majuscule, un chiffre.
@@ -105,15 +105,14 @@ export default function ResetPassword() {
               </div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-navy">
+                <label htmlFor="confirmation" className="mb-1 block text-sm font-medium text-navy">
                   Confirmer le mot de passe
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
+                  id="confirmation"
                   autoComplete="new-password"
                   value={form.confirmation}
                   onChange={(e) => setForm((p) => ({ ...p, confirmation: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
                 />
               </div>
 

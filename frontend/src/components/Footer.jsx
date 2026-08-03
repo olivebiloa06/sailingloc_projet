@@ -1,33 +1,7 @@
 import { Link } from "react-router-dom";
 import HorizonDivider from "./HorizonDivider";
-
-const COLUMNS = [
-  {
-    title: "Navigation",
-    links: [
-      { to: "/boats", label: "Explorer les bateaux" },
-      { to: "/#comment-ca-marche", label: "Comment ça marche" },
-      { to: "/a-propos", label: "À propos" },
-      { to: "/avis", label: "Avis" },
-    ],
-  },
-  {
-    title: "Assistance",
-    links: [
-      { to: "/aide", label: "Centre d'aide" },
-      { to: "/contact", label: "Contact" },
-      { to: "/securite", label: "Sécurité & confiance" },
-    ],
-  },
-  {
-    title: "Propriétaires",
-    links: [
-      { to: "/register?role=proprietaire", label: "Mettre mon bateau en location" },
-      { to: "/ressources-proprietaires", label: "Ressources propriétaires" },
-      { to: "/assurance", label: "Assurance & garanties" },
-    ],
-  },
-];
+import { usePublishBoatLink } from "../hooks/usePublishBoatLink";
+import { useAuth } from "../hooks/useAuth";
 
 const LEGAL_LINKS = [
   { to: "/mentions-legales", label: "Mentions légales" },
@@ -35,7 +9,63 @@ const LEGAL_LINKS = [
   { to: "/cookies", label: "Cookies" },
 ];
 
+// Contenu marketing (recherche de bateau, devenir propriétaire...) pour les
+// visiteurs/locataires/propriétaires — non pertinent pour un admin, qui gère
+// la plateforme plutôt que d'y naviguer comme un client.
+function buildClientColumns(publishBoatLink) {
+  return [
+    {
+      title: "Navigation",
+      links: [
+        { to: "/boats", label: "Explorer les bateaux" },
+        { to: "/#comment-ca-marche", label: "Comment ça marche" },
+        { to: "/a-propos", label: "À propos" },
+        { to: "/avis", label: "Avis" },
+      ],
+    },
+    {
+      title: "Assistance",
+      links: [
+        { to: "/aide", label: "Centre d'aide" },
+        { to: "/contact", label: "Contact" },
+        { to: "/securite", label: "Sécurité & confiance" },
+      ],
+    },
+    {
+      title: "Propriétaires",
+      links: [
+        { to: publishBoatLink, label: "Mettre mon bateau en location" },
+        { to: "/ressources-proprietaires", label: "Ressources propriétaires" },
+        { to: "/assurance", label: "Assurance & garanties" },
+      ],
+    },
+  ];
+}
+
+const ADMIN_COLUMNS = [
+  {
+    title: "Administration",
+    links: [
+      { to: "/mon-compte", label: "Tableau de bord" },
+      { to: "/admin/documents", label: "Documents à valider" },
+    ],
+  },
+  {
+    title: "Assistance",
+    links: [
+      { to: "/aide", label: "Centre d'aide" },
+      { to: "/contact", label: "Contact" },
+    ],
+  },
+];
+
 export default function Footer() {
+  const publishBoatLink = usePublishBoatLink();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  const columns = isAdmin ? ADMIN_COLUMNS : buildClientColumns(publishBoatLink);
+
   return (
     <footer className="bg-abysse text-white/70">
       <HorizonDivider fill="var(--color-cloud)" flip />
@@ -47,13 +77,13 @@ export default function Footer() {
               SailingLoc
             </Link>
             <p className="mt-3 max-w-xs text-sm leading-relaxed">
-              La location de bateaux entre particuliers, simple et en
-              confiance — voiliers, catamarans et bateaux à moteur partout en
-              France.
+              {isAdmin
+                ? "Espace d'administration SailingLoc — gestion des utilisateurs, des annonces et des transactions de la plateforme."
+                : "La location de bateaux entre particuliers, simple et en confiance — voiliers, catamarans et bateaux à moteur partout en France."}
             </p>
           </div>
 
-          {COLUMNS.map((column) => (
+          {columns.map((column) => (
             <div key={column.title}>
               <h3 className="font-heading text-sm font-semibold uppercase tracking-wide text-white">
                 {column.title}

@@ -26,6 +26,7 @@ const LABELS = {
     "reset-password": "Réinitialisation",
     "booking-success": "Confirmation",
     "admin": "Administration",
+    bateaux: "Bateaux",
   },
   EN: {
     boats: "Boats",
@@ -49,6 +50,7 @@ const LABELS = {
     register: "Sign up",
     "booking-success": "Confirmation",
     "admin": "Administration",
+    bateaux: "Boats",
   },
 };
 

@@ -1,22 +1,40 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { isValidEmail } from "../utils/validators";
+import PasswordInput from "../components/PasswordInput";
+import { defaultRedirectFor } from "../utils/roleRedirect";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // On reconstruit pathname + search (pas juste pathname) : sinon, un
   // utilisateur redirigé depuis /boats?localisation=Corse perdrait son
   // filtre après connexion et retomberait sur /boats tout court.
   const from = location.state?.from;
-  const redirectTo = from ? `${from.pathname}${from.search || ""}` : "/";
 
   const [form, setForm] = useState({ email: "", motDePasse: "" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Un utilisateur déjà connecté n'a rien à faire sur /login : ni en y
+  // tapant l'URL directement, ni en y arrivant via le bouton "précédent" du
+  // navigateur (ex. après avoir cliqué sur "Connexion" par erreur). Il est
+  // renvoyé directement vers sa page principale, tant qu'il ne s'est pas
+  // déconnecté lui-même.
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-navy">
+        Chargement...
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to={defaultRedirectFor(user.role)} replace />;
+  }
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -37,7 +55,10 @@ export default function Login() {
 
     setSubmitting(true);
     try {
-      await login(form.email, form.motDePasse);
+      const loggedInUser = await login(form.email, form.motDePasse);
+      const redirectTo = from
+        ? `${from.pathname}${from.search || ""}`
+        : defaultRedirectFor(loggedInUser.role);
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setServerError(
@@ -133,14 +154,12 @@ export default function Login() {
               >
                 Mot de passe oublié ?
               </Link>
-              <input
+              <PasswordInput
                 id="motDePasse"
                 name="motDePasse"
-                type="password"
                 autoComplete="current-password"
                 value={form.motDePasse}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
               />
               {errors.motDePasse && (
                 <p className="mt-1 text-xs text-red-600">{errors.motDePasse}</p>

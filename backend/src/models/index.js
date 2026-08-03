@@ -33,9 +33,8 @@ Booking.belongsTo(Boat, { foreignKey: "boatId" });
 Booking.hasOne(Payment, { foreignKey: "bookingId", onDelete: "CASCADE" });
 Payment.belongsTo(Booking, { foreignKey: "bookingId", include: [{ model: Boat }, { model: User }] });
 
-// Booking <-> Contract
 Booking.hasOne(Contract, { foreignKey: "bookingId", onDelete: "CASCADE" });
-Contract.belongsTo(Booking, { foreignKey: "bookingId" });
+Contract.belongsTo(Booking, { foreignKey: { name: "bookingId", unique: true } });
 
 // User <-> Review
 User.hasMany(Review, { foreignKey: "userId", onDelete: "CASCADE" });
@@ -46,8 +45,9 @@ Boat.hasMany(Review, { foreignKey: "boatId", onDelete: "CASCADE" });
 Review.belongsTo(Boat, { foreignKey: "boatId" });
 
 // Booking <-> Review
+
 Booking.hasOne(Review, { foreignKey: "bookingId", onDelete: "CASCADE" });
-Review.belongsTo(Booking, { foreignKey: "bookingId" });
+Review.belongsTo(Booking, { foreignKey: { name: "bookingId", unique: true } });
 
 // User <-> Document
 User.hasMany(Document, { foreignKey: "userId", onDelete: "CASCADE" });

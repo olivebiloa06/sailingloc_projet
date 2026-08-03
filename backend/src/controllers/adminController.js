@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const {
   User,
   Booking,
@@ -26,6 +27,30 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+// Voir tous les bateaux (modération) — avec le propriétaire de chacun, pour
+// que l'admin puisse identifier qui gère quelle annonce. Contrairement à
+// GET /api/boats (public), non filtré sur le statut "publie" : l'admin doit
+// aussi voir les brouillons/en attente/suspendus.
+exports.getAllBoats = async (req, res) => {
+  try {
+    const boats = await Boat.findAll({
+      include: [
+        { model: User, attributes: ["id", "nom", "prenom", "email", "role"] },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json({
+      message: "Bateaux récupérés avec succès",
+      boats,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 // Changer le rôle d’un utilisateur
 exports.updateUserRole = async (req, res) => {
   try {
@@ -44,6 +69,18 @@ exports.updateUserRole = async (req, res) => {
       return res.status(404).json({
         message: "Utilisateur introuvable",
       });
+    }
+
+
+    if (user.role === "admin" && role !== "admin") {
+      const otherAdmins = await User.count({
+        where: { role: "admin", id: { [Op.ne]: user.id } },
+      });
+      if (otherAdmins === 0) {
+        return res.status(400).json({
+          message: "Impossible de retirer le rôle admin du dernier administrateur restant.",
+        });
+      }
     }
 
     await user.update({ role });

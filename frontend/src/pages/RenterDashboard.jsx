@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
@@ -80,8 +80,7 @@ function ReviewModal({ booking, onClose, onSubmit }) {
 }
 
 export default function RenterDashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,8 +109,6 @@ export default function RenterDashboard() {
     }
   };
 
-  const handleLogout = async () => { await logout(); navigate("/", { replace: true }); };
-
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
       {reviewBooking && (
@@ -129,9 +126,6 @@ export default function RenterDashboard() {
           </h1>
           <p className="mt-1 text-sm text-gray-500">Locataire · {user?.email}</p>
         </div>
-        <button onClick={handleLogout} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-navy hover:text-navy">
-          Se déconnecter
-        </button>
       </div>
 
       <div className="mt-8">

@@ -1,4 +1,18 @@
+const { Op } = require("sequelize");
 const { Availability, Boat } = require("../models");
+
+
+async function hasOverlappingAvailability(boatId, dateDebut, dateFin, excludeId) {
+  const overlapping = await Availability.findOne({
+    where: {
+      boatId,
+      ...(excludeId ? { id: { [Op.ne]: excludeId } } : {}),
+      dateDebut: { [Op.lt]: dateFin },
+      dateFin: { [Op.gt]: dateDebut },
+    },
+  });
+  return !!overlapping;
+}
 
 // Ajouter une disponibilité
 exports.createAvailability = async (req, res) => {
@@ -16,6 +30,12 @@ exports.createAvailability = async (req, res) => {
     if (boat.userId !== req.user.id && req.user.role !== "admin") {
       return res.status(403).json({
         message: "Accès interdit : vous n’êtes pas propriétaire de ce bateau",
+      });
+    }
+
+    if (await hasOverlappingAvailability(boatId, dateDebut, dateFin)) {
+      return res.status(409).json({
+        message: "Une autre fenêtre de disponibilité existe déjà sur une partie de cette période pour ce bateau.",
       });
     }
 
@@ -79,6 +99,15 @@ exports.updateAvailability = async (req, res) => {
     ) {
       return res.status(403).json({
         message: "Accès interdit",
+      });
+    }
+
+    const dateDebut = req.body.dateDebut ?? availability.dateDebut;
+    const dateFin = req.body.dateFin ?? availability.dateFin;
+
+    if (await hasOverlappingAvailability(availability.boatId, dateDebut, dateFin, availability.id)) {
+      return res.status(409).json({
+        message: "Une autre fenêtre de disponibilité existe déjà sur une partie de cette période pour ce bateau.",
       });
     }
 

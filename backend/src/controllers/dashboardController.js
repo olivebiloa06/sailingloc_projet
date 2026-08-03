@@ -77,7 +77,8 @@ exports.getOwnerStats = async (req, res) => {
       });
 
       boat.Bookings.forEach((booking) => {
-        if (booking.statut === "confirmee") {
+
+        if (["confirmee", "terminee"].includes(booking.statut)) {
           confirmedBookings += 1;
           totalRevenue += booking.montantTotal;
         }

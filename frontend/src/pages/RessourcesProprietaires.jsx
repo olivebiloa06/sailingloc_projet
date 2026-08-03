@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import StaticPage from "../components/StaticPage";
+import { usePublishBoatLink } from "../hooks/usePublishBoatLink";
 
 const ETAPES = [
   { num: "01", titre: "Créer votre compte propriétaire", desc: "Inscris-toi et choisis le rôle \"Propriétaire\". Tu devras soumettre une pièce d'identité et une attestation d'assurance. Notre équipe valide ces documents sous 24h." },
@@ -17,6 +18,7 @@ const CONSEILS = [
 ];
 
 export default function RessourcesProprietaires() {
+  const publishBoatLink = usePublishBoatLink();
   return (
     <StaticPage
       title="Ressources propriétaires"
@@ -57,7 +59,7 @@ export default function RessourcesProprietaires() {
             Un voilier de 9 mètres loué 4 semaines par saison génère en moyenne 6 800 € de revenus nets — de quoi couvrir 70 % des frais annuels d'entretien.
           </p>
           <Link
-            to="/register?role=proprietaire"
+            to={publishBoatLink}
             className="mt-4 inline-block rounded-lg bg-white px-5 py-2 text-sm font-semibold text-navy hover:bg-cloud"
           >
             Créer mon annonce gratuitement
