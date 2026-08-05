@@ -2,6 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const { Boat } = require("../models");
 const { isFileSignatureValid } = require("../utils/fileSignature");
+const { cloudinary } = require("../middlewares/uploadMiddleware");
+
+const isProduction = process.env.NODE_ENV === "production" && process.env.CLOUDINARY_CLOUD_NAME;
 
 // Upload image bateau
 exports.uploadBoatImage = async (req, res) => {
@@ -9,42 +12,46 @@ exports.uploadBoatImage = async (req, res) => {
     const { boatId } = req.params;
 
     if (!req.file) {
-      return res.status(400).json({
-        message: "Aucun fichier envoyé",
-      });
-    }
-
-    // Vérification du contenu réel du fichier (magic bytes), en plus du
-    // mimetype déclaré déjà filtré par multer : le mimetype client est
-    // falsifiable, pas les premiers octets du fichier lui-même.
-    if (!isFileSignatureValid(req.file.path, req.file.mimetype)) {
-      fs.unlinkSync(req.file.path);
-      return res.status(400).json({
-        message: "Le contenu du fichier ne correspond pas au type déclaré.",
-      });
+      return res.status(400).json({ message: "Aucun fichier envoyé" });
     }
 
     const boat = await Boat.findByPk(boatId);
-
     if (!boat) {
-      fs.unlinkSync(req.file.path);
-      return res.status(404).json({
-        message: "Bateau introuvable",
-      });
+      // Supprime le fichier uploadé si le bateau n'existe pas
+      if (!isProduction && req.file.path) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ message: "Bateau introuvable" });
     }
 
     if (boat.userId !== req.user.id && req.user.role !== "admin") {
-      fs.unlinkSync(req.file.path);
-      return res.status(403).json({
-        message: "Accès interdit : vous n’êtes pas propriétaire de ce bateau",
-      });
+      if (!isProduction && req.file.path) fs.unlinkSync(req.file.path);
+      return res.status(403).json({ message: "Accès interdit : vous n'êtes pas propriétaire de ce bateau" });
     }
 
-    const fileUrl = `/uploads/boats/${req.file.filename}`;
+    let fileUrl;
 
-    await boat.update({
-      imageUrl: fileUrl,
-    });
+    if (isProduction) {
+      // Cloudinary — l'URL est directement dans req.file.path (URL Cloudinary)
+      fileUrl = req.file.path;
+    } else {
+      // Local — vérification magic bytes + URL relative
+      if (!isFileSignatureValid(req.file.path, req.file.mimetype)) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ message: "Le contenu du fichier ne correspond pas au type déclaré." });
+      }
+      fileUrl = `/uploads/boats/${req.file.filename}`;
+    }
+
+    // Supprime l'ancienne image Cloudinary si elle existe
+    if (isProduction && boat.imageUrl && boat.imageUrl.includes("cloudinary")) {
+      try {
+        const publicId = boat.imageUrl.split("/").slice(-1)[0].split(".")[0];
+        await cloudinary.uploader.destroy(`sailingloc/boats/${publicId}`);
+      } catch {
+        // Pas bloquant si la suppression échoue
+      }
+    }
+
+    await boat.update({ imageUrl: fileUrl });
 
     return res.status(200).json({
       message: "Image du bateau uploadée avec succès",
@@ -52,9 +59,7 @@ exports.uploadBoatImage = async (req, res) => {
       boat,
     });
   } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -64,48 +69,35 @@ exports.deleteBoatImage = async (req, res) => {
     const { boatId } = req.params;
 
     const boat = await Boat.findByPk(boatId);
-
-    if (!boat) {
-      return res.status(404).json({
-        message: "Bateau introuvable",
-      });
-    }
+    if (!boat) return res.status(404).json({ message: "Bateau introuvable" });
 
     if (boat.userId !== req.user.id && req.user.role !== "admin") {
-      return res.status(403).json({
-        message: "Accès interdit",
-      });
+      return res.status(403).json({ message: "Accès interdit" });
     }
 
     if (boat.imageUrl) {
-      // boat.imageUrl est généré par le serveur lors de l'upload
-      // (uploadBoatImage), jamais accepté tel quel depuis le body d'une
-      // requête PUT (voir le correctif mass-assignment dans boatController),
-      // donc pas de risque de traversée de chemin ici. On vérifie quand même
-      // que le chemin résolu reste bien à l'intérieur du dossier attendu.
-      const resolvedPath = path.join(
-        __dirname,
-        "../../",
-        boat.imageUrl
-      );
-      const boatsDir = path.join(__dirname, "../../uploads/boats");
-
-      if (resolvedPath.startsWith(boatsDir) && fs.existsSync(resolvedPath)) {
-        fs.unlinkSync(resolvedPath);
+      if (isProduction && boat.imageUrl.includes("cloudinary")) {
+        // Supprime sur Cloudinary
+        try {
+          const publicId = boat.imageUrl.split("/").slice(-1)[0].split(".")[0];
+          await cloudinary.uploader.destroy(`sailingloc/boats/${publicId}`);
+        } catch {
+          // Pas bloquant
+        }
+      } else {
+        // Supprime en local
+        const resolvedPath = path.join(__dirname, "../../", boat.imageUrl);
+        const boatsDir = path.join(__dirname, "../../uploads/boats");
+        if (resolvedPath.startsWith(boatsDir) && fs.existsSync(resolvedPath)) {
+          fs.unlinkSync(resolvedPath);
+        }
       }
     }
 
-    await boat.update({
-      imageUrl: null,
-    });
+    await boat.update({ imageUrl: null });
 
-    return res.status(200).json({
-      message: "Image supprimée avec succès",
-      boat,
-    });
+    return res.status(200).json({ message: "Image supprimée avec succès", boat });
   } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+    return res.status(500).json({ message: error.message });
   }
 };
