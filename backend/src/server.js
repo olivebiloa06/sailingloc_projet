@@ -134,9 +134,12 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log("Connexion PostgreSQL réussie.");
 
-    // Sync automatique — crée les tables si elles n'existent pas
-    await sequelize.sync({ alter: true });
-    console.log("Tables synchronisées avec PostgreSQL.");
+    if (process.env.NODE_ENV !== "production") {
+  await sequelize.sync({ alter: true });
+  console.log("Tables synchronisées avec PostgreSQL (mode développement).");
+} else {
+  console.log("Mode production : sync désactivé.");
+}
 
     httpServer.listen(PORT, () => {
       console.log(`Serveur lancé sur le port ${PORT} (HTTP + WebSocket)`);
