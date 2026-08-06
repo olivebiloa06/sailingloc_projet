@@ -8,8 +8,6 @@ const UPLOADS_ROOT = path.join(__dirname, "../../uploads");
 const BOAT_IMAGES_DIR = path.join(UPLOADS_ROOT, "boats");
 const DOCUMENTS_DIR = path.join(UPLOADS_ROOT, "documents");
 
-// En production, on utilise Cloudinary
-// En développement local, on garde le disque local
 const isProduction = process.env.NODE_ENV === "production" && process.env.CLOUDINARY_CLOUD_NAME;
 
 if (isProduction) {
@@ -19,7 +17,6 @@ if (isProduction) {
     api_secret: process.env.CLOUDINARY_API_SECRET,
   });
 } else {
-  // Crée les dossiers locaux si nécessaire
   fs.mkdirSync(BOAT_IMAGES_DIR, { recursive: true });
   fs.mkdirSync(DOCUMENTS_DIR, { recursive: true });
 }
@@ -33,6 +30,7 @@ const makeStorage = (destination) =>
     },
   });
 
+// Images bateaux → Cloudinary en prod, disque en dev
 const cloudinaryBoatStorage = isProduction
   ? new CloudinaryStorage({
       cloudinary,
@@ -46,11 +44,8 @@ const cloudinaryBoatStorage = isProduction
 
 const imageFileFilter = (req, file, cb) => {
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Format de fichier non autorisé (image attendue)"), false);
-  }
+  if (allowedTypes.includes(file.mimetype)) cb(null, true);
+  else cb(new Error("Format de fichier non autorisé (image attendue)"), false);
 };
 
 const documentFileFilter = (req, file, cb) => {
@@ -58,23 +53,20 @@ const documentFileFilter = (req, file, cb) => {
     "image/jpeg", "image/png", "image/webp",
     "application/pdf", "application/octet-stream",
   ];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Format non autorisé. Acceptés : PDF, JPG, PNG."), false);
-  }
+  if (allowedTypes.includes(file.mimetype)) cb(null, true);
+  else cb(new Error("Format non autorisé. Acceptés : PDF, JPG, PNG."), false);
 };
 
-// Upload de photo de bateau
+// Upload images bateaux (Cloudinary en prod)
 const uploadBoatImage = multer({
   storage: cloudinaryBoatStorage,
   fileFilter: imageFileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-// Upload de document personnel (toujours en local — documents sensibles)
+// Upload documents (memoryStorage en prod pour uploader vers Cloudinary manuellement)
 const uploadDocument = multer({
-  storage: makeStorage(DOCUMENTS_DIR),
+  storage: isProduction ? multer.memoryStorage() : makeStorage(DOCUMENTS_DIR),
   fileFilter: documentFileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });

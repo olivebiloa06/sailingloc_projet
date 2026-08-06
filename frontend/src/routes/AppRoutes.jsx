@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 import Layout from "../layouts/Layout";
 
@@ -35,31 +36,24 @@ import NotFound from "../pages/NotFound";
 import ProtectedRoute from "../components/ProtectedRoute";
 import CookieConsent from "../components/CookieConsent";
 
+// Remonte en haut à chaque changement de page
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [pathname]);
+  return null;
+}
+
 function AppRoutes() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <CookieConsent />
       <Routes>
         <Route path="/" element={<Layout><Home /></Layout>} />
-        <Route
-          path="/boats"
-          element={
-            <Layout>
-              <BoatList />
-            </Layout>
-          }
-        />
-        <Route
-          path="/boats/:id"
-          element={
-            <Layout>
-              <BoatDetail />
-            </Layout>
-          }
-        />
-
-        {/* Login/Register restent en plein écran, sans header/footer du site,
-            pour garder le focus sur le formulaire. */}
+        <Route path="/boats" element={<Layout><BoatList /></Layout>} />
+        <Route path="/boats/:id" element={<Layout><BoatDetail /></Layout>} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
@@ -74,124 +68,19 @@ function AppRoutes() {
         <Route path="/confidentialite" element={<Layout><Confidentialite /></Layout>} />
         <Route path="/cookies" element={<Layout><Cookies /></Layout>} />
         <Route path="/contact" element={<Layout><Contact /></Layout>} />
-        <Route
-          path="/mes-messages"
-          element={
-            <ProtectedRoute>
-              <Layout><Messages /></Layout>
-            </ProtectedRoute>
-          }
-        />
         <Route path="/register" element={<Register />} />
-
-        <Route
-          path="/mon-compte"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Account />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/mes-reservations"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <MyBookings />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/demandes"
-          element={
-            <ProtectedRoute roles={["proprietaire", "admin"]}>
-              <Layout>
-                <OwnerRequests />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/documents"
-          element={
-            <ProtectedRoute roles={["admin"]}>
-              <Layout>
-                <AdminDocuments />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/mes-bateaux"
-          element={
-            <ProtectedRoute roles={["proprietaire", "admin"]}>
-              <Layout>
-                <OwnerBoats />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/mes-bateaux/nouveau"
-          element={
-            <ProtectedRoute roles={["proprietaire", "admin"]}>
-              <Layout>
-                <BoatForm />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/mes-bateaux/:id/edit"
-          element={
-            <ProtectedRoute roles={["proprietaire", "admin"]}>
-              <Layout>
-                <BoatForm />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/mes-bateaux/:id/disponibilites"
-          element={
-            <ProtectedRoute roles={["proprietaire", "admin"]}>
-              <Layout>
-                <ManageAvailability />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/reservations/:id"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <Reservation />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Cibles de redirection Stripe (success_url / cancel_url) — pas de
-            ProtectedRoute ici : après l'aller-retour sur checkout.stripe.com,
-            la session se rétablit silencieusement via le cookie de refresh
-            (voir AuthContext), pas besoin de bloquer l'affichage en attendant. */}
+        <Route path="/mes-messages" element={<ProtectedRoute><Layout><Messages /></Layout></ProtectedRoute>} />
+        <Route path="/mon-compte" element={<ProtectedRoute><Layout><Account /></Layout></ProtectedRoute>} />
+        <Route path="/mes-reservations" element={<ProtectedRoute><Layout><MyBookings /></Layout></ProtectedRoute>} />
+        <Route path="/demandes" element={<ProtectedRoute roles={["proprietaire", "admin"]}><Layout><OwnerRequests /></Layout></ProtectedRoute>} />
+        <Route path="/admin/documents" element={<ProtectedRoute roles={["admin"]}><Layout><AdminDocuments /></Layout></ProtectedRoute>} />
+        <Route path="/mes-bateaux" element={<ProtectedRoute roles={["proprietaire", "admin"]}><Layout><OwnerBoats /></Layout></ProtectedRoute>} />
+        <Route path="/mes-bateaux/nouveau" element={<ProtectedRoute roles={["proprietaire", "admin"]}><Layout><BoatForm /></Layout></ProtectedRoute>} />
+        <Route path="/mes-bateaux/:id/edit" element={<ProtectedRoute roles={["proprietaire", "admin"]}><Layout><BoatForm /></Layout></ProtectedRoute>} />
+        <Route path="/mes-bateaux/:id/disponibilites" element={<ProtectedRoute roles={["proprietaire", "admin"]}><Layout><ManageAvailability /></Layout></ProtectedRoute>} />
+        <Route path="/reservations/:id" element={<ProtectedRoute><Layout><Reservation /></Layout></ProtectedRoute>} />
         <Route path="/booking/success" element={<Layout><BookingSuccess /></Layout>} />
         <Route path="/booking/cancel" element={<Layout><BookingCancel /></Layout>} />
-
-        {/* Garde-fou : toute page pas encore construite (liens du footer,
-            "À propos"...) affiche un message clair plutôt qu'un écran blanc. */}
         <Route path="*" element={<Layout><NotFound /></Layout>} />
       </Routes>
     </BrowserRouter>

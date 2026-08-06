@@ -16,36 +16,36 @@ export default function BookingSuccess() {
   const sessionId = searchParams.get("session_id");
 
   useEffect(() => {
-    if (!sessionId) {
-      // Pas de session_id (ex: PayPal) — charge la dernière réservation confirmée
-      api.get("/bookings/mes-reservations")
-        .then(({ data }) => {
+    const load = async () => {
+      try {
+        // Refresh silencieux pour restaurer la session après redirect Stripe
+        await api.post("/auth/refresh").catch(() => {});
+
+        if (!sessionId) {
+          const { data } = await api.get("/bookings/mes-reservations");
           const confirmed = (data.bookings || []).filter((b) => b.statut === "confirmee");
           if (confirmed.length > 0) setBooking(confirmed[0]);
-        })
-        .catch(() => setError("Impossible de charger ta réservation."))
-        .finally(() => setLoading(false));
-      return;
-    }
+          return;
+        }
 
-    // Appelle l'endpoint de confirmation — s'il n'est pas encore confirmé par le
-    // webhook, cette route le confirme maintenant, génère le contrat et envoie
-    // les emails. Si déjà confirmé, renvoie juste les données.
-    api.get(`/payments/stripe/confirm/${sessionId}`)
-      .then(({ data }) => {
-        setBooking(data.booking);
-        setContract(data.contract || null);
-      })
-      .catch(() => {
-        // Fallback : webhook peut-être déjà passé, on charge les réservations
-        api.get("/bookings/mes-reservations")
-          .then(({ data }) => {
-            const confirmed = (data.bookings || []).filter((b) => b.statut === "confirmee");
-            if (confirmed.length > 0) setBooking(confirmed[0]);
-          })
-          .catch(() => setError("Impossible de charger ta réservation."));
-      })
-      .finally(() => setLoading(false));
+        try {
+          const { data } = await api.get(`/payments/stripe/confirm/${sessionId}`);
+          setBooking(data.booking);
+          setContract(data.contract || null);
+        } catch {
+          // Fallback
+          const { data } = await api.get("/bookings/mes-reservations");
+          const confirmed = (data.bookings || []).filter((b) => b.statut === "confirmee");
+          if (confirmed.length > 0) setBooking(confirmed[0]);
+        }
+      } catch {
+        setError("Impossible de charger ta réservation.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, [sessionId]);
 
   const downloadContract = async () => {
@@ -76,10 +76,7 @@ export default function BookingSuccess() {
       </p>
 
       {loading && <p className="mt-6 text-sm text-gray-400">Chargement...</p>}
-
-      {error && (
-        <p className="mt-4 text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 
       {!loading && booking && (
         <div className="mt-8 rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm">
@@ -117,13 +114,11 @@ export default function BookingSuccess() {
         <Link to="/mes-reservations" className="rounded-xl bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-navy-light">
           Voir mes réservations
         </Link>
-
         {contract && (
           <button type="button" onClick={downloadContract} className="rounded-xl border border-navy px-6 py-3 text-sm font-semibold text-navy transition hover:bg-cloud">
             📄 Télécharger le contrat
           </button>
         )}
-
         <Link to="/" className="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-600 transition hover:border-navy hover:text-navy">
           Retour à l'accueil
         </Link>
