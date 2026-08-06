@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
 
+const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
+
 const TYPE_LABELS = {
   piece_identite: "Pièce d'identité",
   assurance: "Assurance",
@@ -11,9 +13,7 @@ const TYPE_LABELS = {
 
 function formatDate(value) {
   return new Date(value).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+    day: "numeric", month: "short", year: "numeric",
   });
 }
 
@@ -36,14 +36,9 @@ function DocumentCard({ doc, onAction }) {
     }
   };
 
-  const downloadDoc = async () => {
-    try {
-      const res = await api.get(`/documents/${doc.id}/file`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      window.open(url, "_blank");
-    } catch {
-      alert("Impossible de télécharger ce document.");
-    }
+  const viewDoc = () => {
+    // Ouvre directement l'URL backend — le 302 vers Cloudinary sera suivi par le navigateur
+    window.open(`${API_BASE}/documents/${doc.id}/file`, "_blank");
   };
 
   return (
@@ -62,10 +57,10 @@ function DocumentCard({ doc, onAction }) {
         </div>
         <button
           type="button"
-          onClick={downloadDoc}
+          onClick={viewDoc}
           className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy"
         >
-          Voir
+          👁 Voir
         </button>
       </div>
 
@@ -106,16 +101,13 @@ export default function AdminDocuments() {
 
   const load = useCallback(() => {
     setLoading(true);
-    api
-      .get("/documents/admin/pending")
+    api.get("/documents/admin/pending")
       .then((res) => setDocuments(res.data.documents || []))
       .catch(() => setError("Impossible de charger les documents."))
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
@@ -123,27 +115,16 @@ export default function AdminDocuments() {
         <h1 className="font-heading text-2xl font-semibold text-navy">
           Validation des documents
         </h1>
-        <button
-          type="button"
-          onClick={load}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy"
-        >
+        <button type="button" onClick={load}
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy">
           ↻ Rafraîchir
         </button>
       </div>
 
       {loading && <p className="mt-6 text-sm text-gray-500">Chargement...</p>}
-
-      {error && (
-        <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
+      {error && <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
       {!loading && !error && documents.length === 0 && (
-        <p className="mt-6 text-sm text-gray-500">
-          Aucun document en attente de validation.
-        </p>
+        <p className="mt-6 text-sm text-gray-500">Aucun document en attente de validation.</p>
       )}
 
       <div className="mt-6 space-y-4">
