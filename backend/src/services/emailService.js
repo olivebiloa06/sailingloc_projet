@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 const fs = require("fs");
 const path = require("path");
+const https = require("https");
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || "smtp.gmail.com",
@@ -8,42 +9,66 @@ const transporter = nodemailer.createTransport({
   secure: false,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    pass: process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS,
   },
 });
 
-// Envoi générique
+const isProduction = process.env.NODE_ENV === "production";
+
+// Télécharge un fichier depuis une URL et retourne un buffer
+function fetchBuffer(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => resolve(Buffer.concat(chunks)));
+      res.on("error", reject);
+    }).on("error", reject);
+  });
+}
+
 exports.sendEmail = async ({ to, subject, html, attachments = [] }) => {
   try {
     await transporter.sendMail({
-      from: `"SailingLoc" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || `"SailingLoc" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
       attachments,
     });
   } catch (error) {
-    // On log sans bloquer — un email raté ne doit pas faire échouer le paiement
     console.error("Erreur envoi email:", error.message);
   }
 };
 
-// =========================
-// EMAIL CONFIRMATION LOCATAIRE (avec PDF contrat en pièce jointe)
-// =========================
 exports.sendPaymentConfirmation = async (userEmail, payment, booking, contract) => {
   const attachments = [];
 
-  // Si un contrat PDF existe, on l'attache
+  // Attache le contrat PDF si disponible
   if (contract?.urlPdf) {
-    const contractsDir = path.join(__dirname, "../../uploads/contracts");
-    const filePath = path.join(contractsDir, contract.urlPdf);
-    if (fs.existsSync(filePath)) {
-      attachments.push({
-        filename: `contrat-sailingloc-${booking?.id || ""}.pdf`,
-        path: filePath,
-        contentType: "application/pdf",
-      });
+    try {
+      if (isProduction && contract.urlPdf.startsWith("http")) {
+        // En prod → télécharge depuis Cloudinary et attache en mémoire
+        const buffer = await fetchBuffer(contract.urlPdf);
+        attachments.push({
+          filename: `contrat-sailingloc-${booking?.id || ""}.pdf`,
+          content: buffer,
+          contentType: "application/pdf",
+        });
+      } else {
+        // En local → lit depuis le disque
+        const contractsDir = path.join(__dirname, "../../uploads/contracts");
+        const filePath = path.join(contractsDir, contract.urlPdf);
+        if (fs.existsSync(filePath)) {
+          attachments.push({
+            filename: `contrat-sailingloc-${booking?.id || ""}.pdf`,
+            path: filePath,
+            contentType: "application/pdf",
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Impossible d'attacher le contrat:", e.message);
     }
   }
 
@@ -99,9 +124,6 @@ exports.sendPaymentConfirmation = async (userEmail, payment, booking, contract) 
   });
 };
 
-// =========================
-// EMAIL NOTIFICATION PROPRIÉTAIRE
-// =========================
 exports.sendOwnerBookingNotification = async (ownerEmail, booking) => {
   const boat = booking?.Boat;
   const renter = booking?.User;
@@ -123,7 +145,7 @@ exports.sendOwnerBookingNotification = async (ownerEmail, booking) => {
         </div>
         <div style="background:#f9fafb;padding:32px;border-radius:0 0 12px 12px">
           <h2 style="color:#0A2A43;font-size:20px">Réservation confirmée 🎉</h2>
-          <p style="color:#4b5563">Une nouvelle réservation a été confirmée et payée pour votre bateau.</p>
+          <p style="color:#4b5563">Une nouvelle réservation a été confirmée pour votre bateau.</p>
 
           <table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:14px">
             <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #e5e7eb">Bateau</td>
@@ -134,7 +156,7 @@ exports.sendOwnerBookingNotification = async (ownerEmail, booking) => {
                 <td style="padding:8px 0;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right">${dateDebut} → ${dateFin}</td></tr>
             <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #e5e7eb">Montant brut</td>
                 <td style="padding:8px 0;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right">${booking?.montantTotal || "—"} €</td></tr>
-            <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #e5e7eb">Commission SailingLoc (10%)</td>
+            <tr><td style="padding:8px 0;color:#6b7280;border-bottom:1px solid #e5e7eb">Commission (10%)</td>
                 <td style="padding:8px 0;color:#374151;border-bottom:1px solid #e5e7eb;text-align:right">−${booking?.commission || "—"} €</td></tr>
             <tr><td style="padding:8px 0;font-weight:700;color:#059669">Votre revenu net</td>
                 <td style="padding:8px 0;font-weight:700;color:#059669;text-align:right">${revenuNet} €</td></tr>
@@ -154,5 +176,4 @@ exports.sendOwnerBookingNotification = async (ownerEmail, booking) => {
   });
 };
 
-// Alias pour compatibilité avec l'ancien code
 exports.sendBookingConfirmation = exports.sendPaymentConfirmation;
