@@ -79,8 +79,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10000,
+  windowMs: 15 * 60 * 10000,
+  max: 100000,
   message: { message: "Trop de requêtes, veuillez réessayer plus tard." },
 });
 app.use("/api", apiLimiter);
