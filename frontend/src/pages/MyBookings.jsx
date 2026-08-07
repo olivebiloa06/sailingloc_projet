@@ -13,9 +13,7 @@ const STATUS_STYLES = {
 
 function formatDate(value) {
   return new Date(value).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+    day: "numeric", month: "short", year: "numeric",
   });
 }
 
@@ -36,64 +34,40 @@ export default function MyBookings() {
 
   useEffect(() => {
     let isMounted = true;
+    api.get("/bookings/mes-reservations")
+      .then((res) => { if (isMounted) setBookings(res.data.bookings || []); })
+      .catch(() => { if (isMounted) setError("Impossible de charger tes réservations."); })
+      .finally(() => { if (isMounted) setLoading(false); });
 
-    api
-      .get("/bookings/mes-reservations")
-      .then((res) => {
-        if (isMounted) setBookings(res.data.bookings || []);
-      })
-      .catch(() => {
-        if (isMounted) setError("Impossible de charger tes réservations.");
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
-
-    // Le contrat n'est plus une simple URL : c'est un vrai PDF, généré
-    // automatiquement dès qu'un paiement est confirmé. On récupère la
-    // liste à part pour savoir lequel proposer en téléchargement.
-    api
-      .get("/contracts/my-contracts")
-      .then((res) => {
-        if (isMounted) setContracts(res.data.contracts || []);
-      })
+    api.get("/contracts/my-contracts")
+      .then((res) => { if (isMounted) setContracts(res.data.contracts || []); })
       .catch(() => {});
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
-  // Le fichier est protégé par authentification (pas de lien public) : on
-  // le récupère via l'instance axios habituelle (qui attache le token), puis
-  // on l'ouvre dans un nouvel onglet à partir du blob reçu.
-    const downloadContract = (contractId) => {
-      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-      window.open(`${API_BASE}/contracts/${contractId}/file`, "_blank");
-    };
+  // Ouvre directement l'URL Cloudinary si disponible — évite le problème
+  // d'auth sur le redirect backend
+  const downloadContract = (contract) => {
+    if (contract.urlPdf?.startsWith("http")) {
+      window.open(contract.urlPdf, "_blank");
+      return;
+    }
+    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    window.open(`${API_BASE}/contracts/${contract.id}/file`, "_blank");
+  };
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="font-heading text-2xl font-semibold text-navy">
-        Mes réservations
-      </h1>
+      <h1 className="font-heading text-2xl font-semibold text-navy">Mes réservations</h1>
 
-      {loading && (
-        <p className="mt-6 text-sm text-gray-500">Chargement...</p>
-      )}
-
-      {error && (
-        <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {loading && <p className="mt-6 text-sm text-gray-500">Chargement...</p>}
+      {error && <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       {!loading && !error && bookings.length === 0 && (
         <p className="mt-6 text-sm text-gray-500">
           Tu n'as pas encore de réservation.{" "}
-          <Link to="/boats" className="font-medium text-sky">
-            Trouver un bateau
-          </Link>
+          <Link to="/boats" className="font-medium text-sky">Trouver un bateau</Link>
         </p>
       )}
 
@@ -105,54 +79,37 @@ export default function MyBookings() {
           const contract = contracts.find((c) => c.bookingId === booking.id);
 
           return (
-            <div
-              key={booking.id}
-              className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4"
-            >
+            <div key={booking.id} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4">
               <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-navy to-sky">
-                {image && (
-                  <img src={image} alt={boat?.nom} className="h-full w-full object-cover" />
-                )}
+                {image && <img src={image} alt={boat?.nom} className="h-full w-full object-cover" />}
               </div>
 
               <div className="flex flex-1 flex-col">
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-heading text-base font-semibold text-navy">
-                    {boat?.nom || "Bateau"}
-                  </h3>
+                  <h3 className="font-heading text-base font-semibold text-navy">{boat?.nom || "Bateau"}</h3>
                   <StatusBadge statut={booking.statut} />
                 </div>
-
                 <p className="mt-1 text-sm text-gray-500">
                   Du {formatDate(booking.dateDebut)} au {formatDate(booking.dateFin)}
                 </p>
-                <p className="mt-1 text-sm font-medium text-navy">
-                  {booking.montantTotal} €
-                </p>
+                <p className="mt-1 text-sm font-medium text-navy">{booking.montantTotal} €</p>
 
                 <div className="mt-3 flex gap-2">
                   {needsPayment && (
-                    <Link
-                      to={`/reservations/${booking.id}`}
-                      className="inline-flex w-fit items-center rounded-lg bg-navy px-4 py-2 text-xs font-semibold text-white transition hover:bg-navy-light"
-                    >
+                    <Link to={`/reservations/${booking.id}`}
+                      className="inline-flex w-fit items-center rounded-lg bg-navy px-4 py-2 text-xs font-semibold text-white transition hover:bg-navy-light">
                       Payer maintenant
                     </Link>
                   )}
 
                   {booking.statut === "confirmee" && (
                     contract ? (
-                      <button
-                        type="button"
-                        onClick={() => downloadContract(contract.id)}
-                        className="inline-flex w-fit items-center rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-navy transition hover:border-navy"
-                      >
-                        Télécharger le contrat
+                      <button type="button" onClick={() => downloadContract(contract)}
+                        className="inline-flex w-fit items-center rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-navy transition hover:border-navy">
+                        📄 Télécharger le contrat
                       </button>
                     ) : (
-                      <span className="text-xs text-gray-400">
-                        Contrat en cours de génération...
-                      </span>
+                      <span className="text-xs text-gray-400">Contrat en cours de génération...</span>
                     )
                   )}
                 </div>

@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
-
 const TYPE_LABELS = {
   piece_identite: "Pièce d'identité",
   assurance: "Assurance",
@@ -37,7 +35,13 @@ function DocumentCard({ doc, onAction }) {
   };
 
   const viewDoc = () => {
-    // Ouvre directement l'URL backend — le 302 vers Cloudinary sera suivi par le navigateur
+    // Si c'est une URL Cloudinary → ouvre directement
+    if (doc.url?.startsWith("http")) {
+      window.open(doc.url, "_blank");
+      return;
+    }
+    // Sinon → passe par le backend (local dev)
+    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
     window.open(`${API_BASE}/documents/${doc.id}/file`, "_blank");
   };
 
@@ -51,42 +55,31 @@ function DocumentCard({ doc, onAction }) {
           <p className="mt-0.5 text-xs text-gray-500">
             {doc.User?.prenom} {doc.User?.nom} · {doc.User?.email} · rôle : {doc.User?.role}
           </p>
-          <p className="mt-0.5 text-xs text-gray-400">
-            Soumis le {formatDate(doc.createdAt)}
-          </p>
+          <p className="mt-0.5 text-xs text-gray-400">Soumis le {formatDate(doc.createdAt)}</p>
         </div>
-        <button
-          type="button"
-          onClick={viewDoc}
-          className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy"
-        >
-          👁 Voir
-        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={viewDoc}
+            className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy">
+            👁 Voir
+          </button>
+          <button type="button" onClick={viewDoc}
+            className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-500">
+            ⬇ Télécharger
+          </button>
+        </div>
       </div>
 
-      <textarea
-        rows={2}
-        placeholder="Commentaire (optionnel, visible par l'utilisateur)"
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-sky focus:outline-none"
-      />
+      <textarea rows={2} placeholder="Commentaire (optionnel, visible par l'utilisateur)"
+        value={comment} onChange={(e) => setComment(e.target.value)}
+        className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs focus:border-sky focus:outline-none" />
 
       <div className="mt-2 flex gap-2">
-        <button
-          type="button"
-          disabled={acting}
-          onClick={() => act("valide")}
-          className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-50"
-        >
+        <button type="button" disabled={acting} onClick={() => act("valide")}
+          className="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-50">
           Valider
         </button>
-        <button
-          type="button"
-          disabled={acting}
-          onClick={() => act("refuse")}
-          className="rounded-lg border border-red-300 px-4 py-1.5 text-xs font-semibold text-red-600 hover:border-red-500 disabled:opacity-50"
-        >
+        <button type="button" disabled={acting} onClick={() => act("refuse")}
+          className="rounded-lg border border-red-300 px-4 py-1.5 text-xs font-semibold text-red-600 hover:border-red-500 disabled:opacity-50">
           Refuser
         </button>
       </div>
@@ -112,9 +105,7 @@ export default function AdminDocuments() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
       <div className="flex items-center justify-between">
-        <h1 className="font-heading text-2xl font-semibold text-navy">
-          Validation des documents
-        </h1>
+        <h1 className="font-heading text-2xl font-semibold text-navy">Validation des documents</h1>
         <button type="button" onClick={load}
           className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy">
           ↻ Rafraîchir
