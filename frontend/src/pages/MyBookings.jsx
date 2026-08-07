@@ -67,19 +67,10 @@ export default function MyBookings() {
   // Le fichier est protégé par authentification (pas de lien public) : on
   // le récupère via l'instance axios habituelle (qui attache le token), puis
   // on l'ouvre dans un nouvel onglet à partir du blob reçu.
-  const downloadContract = async (contractId) => {
-    try {
-      const res = await api.get(`/contracts/${contractId}/file`, {
-        responseType: "blob",
-      });
-      const url = window.URL.createObjectURL(
-        new Blob([res.data], { type: "application/pdf" })
-      );
-      window.open(url, "_blank");
-    } catch {
-      alert("Impossible de récupérer le contrat pour l'instant, réessaie dans un instant.");
-    }
-  };
+    const downloadContract = (contractId) => {
+      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+      window.open(`${API_BASE}/contracts/${contractId}/file`, "_blank");
+    };
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
