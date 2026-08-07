@@ -76,11 +76,26 @@ exports.register = async (req, res) => {
       });
     }
 
-    if (motDePasse.length < 8) {
-      return res.status(400).json({
-        message: "Le mot de passe doit contenir au moins 8 caractères.",
-      });
-    }
+          if (motDePasse.length < 8) {
+        return res.status(400).json({
+          message: "Le mot de passe doit contenir au moins 8 caractères.",
+        });
+      }
+      if (!/[A-Z]/.test(motDePasse)) {
+        return res.status(400).json({
+          message: "Le mot de passe doit contenir au moins une majuscule.",
+        });
+      }
+      if (!/[0-9]/.test(motDePasse)) {
+        return res.status(400).json({
+          message: "Le mot de passe doit contenir au moins un chiffre.",
+        });
+      }
+      if (!/[^A-Za-z0-9]/.test(motDePasse)) {
+        return res.status(400).json({
+          message: "Le mot de passe doit contenir au moins un caractère spécial.",
+        });
+      }
 
     // Vérifier si email existe déjà
     const existingUser = await User.findOne({

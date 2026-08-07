@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 function formatDate(v) {
   return new Date(v).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -8,6 +11,7 @@ function formatDate(v) {
 
 export default function BookingSuccess() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
   const [contract, setContract] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +37,6 @@ export default function BookingSuccess() {
           setBooking(data.booking);
           setContract(data.contract || null);
         } catch {
-          // Fallback
           const { data } = await api.get("/bookings/mes-reservations");
           const confirmed = (data.bookings || []).filter((b) => b.statut === "confirmee");
           if (confirmed.length > 0) setBooking(confirmed[0]);
@@ -44,23 +47,24 @@ export default function BookingSuccess() {
         setLoading(false);
       }
     };
-
     load();
   }, [sessionId]);
 
-  const downloadContract = async () => {
+  const downloadContract = () => {
     if (!contract) return;
-    try {
-      const res = await api.get(`/contracts/${contract.id}/file`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
-      window.open(url, "_blank");
-    } catch {
-      alert("Contrat en cours de génération, réessaie dans quelques instants.");
+    // Ouvre directement l'URL backend → le 302 vers Cloudinary est suivi par le navigateur
+    window.open(`${API_BASE}/contracts/${contract.id}/file`, "_blank");
+  };
+
+  const leaveReview = () => {
+    if (booking?.boatId) {
+      navigate(`/boats/${booking.boatId}?avis=1`);
     }
   };
 
   return (
     <div className="mx-auto max-w-lg px-6 py-16 text-center">
+      {/* Icône succès */}
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
         <svg viewBox="0 0 24 24" className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 13 L9 17 L19 7" />
@@ -110,16 +114,43 @@ export default function BookingSuccess() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Link to="/mes-reservations" className="rounded-xl bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-navy-light">
-          Voir mes réservations
-        </Link>
+      {/* Actions */}
+      <div className="mt-6 flex flex-col gap-3">
+        {/* Télécharger le contrat */}
         {contract && (
-          <button type="button" onClick={downloadContract} className="rounded-xl border border-navy px-6 py-3 text-sm font-semibold text-navy transition hover:bg-cloud">
-            📄 Télécharger le contrat
+          <button
+            type="button"
+            onClick={downloadContract}
+            className="w-full rounded-xl bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-navy-light"
+          >
+            📄 Télécharger le contrat PDF
           </button>
         )}
-        <Link to="/" className="rounded-xl border border-gray-300 px-6 py-3 text-sm font-medium text-gray-600 transition hover:border-navy hover:text-navy">
+
+        {/* Laisser un avis */}
+        {booking?.boatId && (
+          <button
+            type="button"
+            onClick={leaveReview}
+            className="w-full rounded-xl border border-sky px-6 py-3 text-sm font-semibold text-sky transition hover:bg-sky/5"
+          >
+            ⭐ Laisser un avis sur ce bateau
+          </button>
+        )}
+
+        {/* Mes réservations */}
+        <Link
+          to="/mes-reservations"
+          className="w-full rounded-xl border border-gray-300 px-6 py-3 text-center text-sm font-medium text-gray-600 transition hover:border-navy hover:text-navy"
+        >
+          Voir mes réservations
+        </Link>
+
+        {/* Retour accueil */}
+        <Link
+          to="/"
+          className="w-full rounded-xl border border-gray-200 px-6 py-3 text-center text-sm font-medium text-gray-400 transition hover:text-gray-600"
+        >
           Retour à l'accueil
         </Link>
       </div>
