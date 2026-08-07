@@ -48,14 +48,14 @@ export default function MyBookings() {
 
   // Ouvre directement l'URL Cloudinary si disponible — évite le problème
   // d'auth sur le redirect backend
-  const downloadContract = (contract) => {
-    if (contract.urlPdf?.startsWith("http")) {
-      window.open(contract.urlPdf, "_blank");
-      return;
-    }
-    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-    window.open(`${API_BASE}/contracts/${contract.id}/file`, "_blank");
-  };
+    const downloadContract = async (contract) => {
+      try {
+        const { data } = await api.get(`/contracts/${contract.id}/file`);
+        window.open(data.url, "_blank");
+      } catch {
+        alert("Contrat indisponible.");
+      }
+    };  
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">

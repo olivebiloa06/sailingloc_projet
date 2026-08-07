@@ -19,11 +19,8 @@ const canAccessBoatDocuments = (boat, user) => {
 
 exports.createDocument = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "Aucun fichier envoyé" });
-    }
+    if (!req.file) return res.status(400).json({ message: "Aucun fichier envoyé" });
 
-    // Vérification magic bytes (local seulement — en prod Cloudinary gère)
     if (!isProduction && !isFileSignatureValid(req.file.path, req.file.mimetype)) {
       fs.unlinkSync(req.file.path);
       return res.status(400).json({ message: "Le contenu du fichier ne correspond pas au type déclaré." });
@@ -43,24 +40,16 @@ exports.createDocument = async (req, res) => {
       }
       if (boat.userId !== req.user.id && req.user.role !== "admin") {
         if (!isProduction && req.file.path) fs.unlinkSync(req.file.path);
-        return res.status(403).json({ message: "Accès interdit : vous n'êtes pas propriétaire de ce bateau" });
+        return res.status(403).json({ message: "Accès interdit" });
       }
     }
 
     let fileUrl;
     if (isProduction) {
-      // Upload sur Cloudinary (resource_type: raw pour les PDFs)
       const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: "sailingloc/documents",
-            resource_type: "raw",
-            public_id: `doc-${req.user.id}-${Date.now()}`,
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
+          { folder: "sailingloc/documents", resource_type: "raw", public_id: `doc-${req.user.id}-${Date.now()}` },
+          (error, result) => { if (error) reject(error); else resolve(result); }
         );
         uploadStream.end(req.file.buffer);
       });
@@ -70,9 +59,7 @@ exports.createDocument = async (req, res) => {
     }
 
     const document = await Document.create({
-      nom,
-      type,
-      url: fileUrl,
+      nom, type, url: fileUrl,
       boatId: boatId || null,
       userId: req.user.id,
       statutValidation: "en_attente",
@@ -101,14 +88,9 @@ exports.getDocumentsByBoat = async (req, res) => {
     const { boatId } = req.params;
     const boat = await Boat.findByPk(boatId);
     if (!boat) return res.status(404).json({ message: "Bateau introuvable" });
-    if (!canAccessBoatDocuments(boat, req.user)) {
-      return res.status(403).json({ message: "Accès interdit" });
-    }
-    const documents = await Document.findAll({
-      where: { boatId },
-      order: [["createdAt", "DESC"]],
-    });
-    return res.status(200).json({ message: "Documents du bateau récupérés avec succès", documents });
+    if (!canAccessBoatDocuments(boat, req.user)) return res.status(403).json({ message: "Accès interdit" });
+    const documents = await Document.findAll({ where: { boatId }, order: [["createdAt", "DESC"]] });
+    return res.status(200).json({ message: "Documents récupérés avec succès", documents });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -120,30 +102,23 @@ exports.getDocumentFile = async (req, res) => {
     const document = await Document.findByPk(id);
     if (!document) return res.status(404).json({ message: "Document introuvable" });
     if (!canAccessDocument(document, req.user)) {
-      return res.status(403).json({ message: "Accès interdit : ce document ne vous appartient pas" });
+      return res.status(403).json({ message: "Accès interdit" });
     }
     if (!document.url) return res.status(404).json({ message: "Fichier introuvable" });
 
-    // En production → url est une URL Cloudinary → redirect
+    // En production → retourne l'URL JSON (pas de redirect → évite CORS avec credentials)
     if (isProduction && document.url.startsWith("http")) {
-      return res.redirect(document.url);
+      return res.status(200).json({ url: document.url });
     }
 
-    // En local → url est un filename
+    // En local → sert le fichier
     const filePath = path.join(DOCUMENTS_DIR, document.url);
     if (!filePath.startsWith(DOCUMENTS_DIR) || !fs.existsSync(filePath)) {
       return res.status(404).json({ message: "Fichier introuvable" });
     }
-
     const ext = path.extname(document.url).toLowerCase();
-    const mimeTypes = {
-      ".pdf": "application/pdf",
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-    };
-    const contentType = mimeTypes[ext] || "application/octet-stream";
-    res.setHeader("Content-Type", contentType);
+    const mimeTypes = { ".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png" };
+    res.setHeader("Content-Type", mimeTypes[ext] || "application/octet-stream");
     res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(document.nom)}${ext}"`);
     return res.sendFile(filePath);
   } catch (error) {
@@ -155,13 +130,11 @@ exports.validateDocument = async (req, res) => {
   try {
     const { id } = req.params;
     const { statutValidation, commentaireAdmin } = req.body;
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Accès interdit : réservé à l'administrateur" });
-    }
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Accès interdit" });
     const document = await Document.findByPk(id);
     if (!document) return res.status(404).json({ message: "Document introuvable" });
     if (!["valide", "refuse"].includes(statutValidation)) {
-      return res.status(400).json({ message: "Statut invalide. Valeurs acceptées : valide, refuse" });
+      return res.status(400).json({ message: "Statut invalide." });
     }
     await document.update({ statutValidation, commentaireAdmin });
     return res.status(200).json({ message: "Statut du document mis à jour", document });
@@ -172,9 +145,7 @@ exports.validateDocument = async (req, res) => {
 
 exports.getAllPendingDocuments = async (req, res) => {
   try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ message: "Accès réservé à l'admin" });
-    }
+    if (req.user.role !== "admin") return res.status(403).json({ message: "Accès réservé à l'admin" });
     const documents = await Document.findAll({
       where: { statutValidation: "en_attente" },
       include: [{ model: User, attributes: ["id", "nom", "prenom", "email", "role"] }],
@@ -194,21 +165,15 @@ exports.deleteDocument = async (req, res) => {
     if (document.userId !== req.user.id && req.user.role !== "admin") {
       return res.status(403).json({ message: "Accès interdit" });
     }
-
-    // Supprime le fichier
     if (isProduction && document.url?.startsWith("http")) {
-      // Supprime sur Cloudinary
       try {
         const publicId = document.url.split("/").slice(-1)[0].split(".")[0];
         await cloudinary.uploader.destroy(`sailingloc/documents/${publicId}`, { resource_type: "raw" });
-      } catch { /* pas bloquant */ }
+      } catch {}
     } else if (!isProduction) {
       const filePath = path.join(DOCUMENTS_DIR, document.url);
-      if (filePath.startsWith(DOCUMENTS_DIR) && fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      if (filePath.startsWith(DOCUMENTS_DIR) && fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
-
     await document.destroy();
     return res.status(200).json({ message: "Document supprimé avec succès" });
   } catch (error) {

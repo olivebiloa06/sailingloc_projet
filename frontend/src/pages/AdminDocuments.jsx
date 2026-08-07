@@ -34,15 +34,13 @@ function DocumentCard({ doc, onAction }) {
     }
   };
 
-  const viewDoc = () => {
-    // Si c'est une URL Cloudinary → ouvre directement
-    if (doc.url?.startsWith("http")) {
-      window.open(doc.url, "_blank");
-      return;
+    const viewDoc = async () => {
+    try {
+      const { data } = await api.get(`/documents/${doc.id}/file`);
+      window.open(data.url, "_blank");
+    } catch {
+      alert("Impossible de charger le document.");
     }
-    // Sinon → passe par le backend (local dev)
-    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-    window.open(`${API_BASE}/documents/${doc.id}/file`, "_blank");
   };
 
   return (

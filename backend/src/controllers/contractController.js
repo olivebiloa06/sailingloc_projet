@@ -18,8 +18,6 @@ async function generateContractForBooking(bookingId) {
   const existingContract = await Contract.findOne({ where: { bookingId } });
   if (existingContract) return existingContract;
 
-  // En prod → retourne une URL Cloudinary
-  // En dev → retourne un filename local
   const urlPdf = await generateContractPdf({
     booking,
     boat: booking.Boat,
@@ -97,12 +95,12 @@ exports.getContractFile = async (req, res) => {
     }
     if (!contract.urlPdf) return res.status(404).json({ message: "Aucun fichier pour ce contrat" });
 
-    // En production → urlPdf est une URL Cloudinary complète → redirect
+    // En production → retourne l'URL JSON (pas de redirect → évite CORS avec credentials)
     if (isProduction && contract.urlPdf.startsWith("http")) {
-      return res.redirect(contract.urlPdf);
+      return res.status(200).json({ url: contract.urlPdf });
     }
 
-    // En local → urlPdf est un filename
+    // En local → sert le fichier
     const filePath = path.join(CONTRACTS_DIR, contract.urlPdf);
     if (!filePath.startsWith(CONTRACTS_DIR) || !fs.existsSync(filePath)) {
       return res.status(404).json({ message: "Fichier introuvable" });
