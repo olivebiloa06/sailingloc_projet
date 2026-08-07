@@ -35,12 +35,13 @@ function DocumentCard({ doc, onAction }) {
   };
 
     const viewDoc = async () => {
-    try {
-      const { data } = await api.get(`/documents/${doc.id}/file`);
-      window.open(data.url, "_blank");
-    } catch {
-      alert("Impossible de charger le document.");
-    }
+  try {
+        const { data } = await api.get(`/documents/${doc.id}/file`);
+        window.open(data.url, "_blank");
+      } catch {
+        alert("Impossible de charger le document.");
+      }
+    };
   };
 
   return (

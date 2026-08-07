@@ -51,9 +51,9 @@ export default function BookingSuccess() {
   }, [sessionId]);
 
   const downloadContract = () => {
-    if (!contract) return;
-    // Ouvre directement l'URL backend → le 302 vers Cloudinary est suivi par le navigateur
-    window.open(`${API_BASE}/contracts/${contract.id}/file`, "_blank");
+    if (contract?.urlPdf?.startsWith("http")) {
+      window.open(contract.urlPdf, "_blank");
+    }
   };
 
   const leaveReview = () => {
