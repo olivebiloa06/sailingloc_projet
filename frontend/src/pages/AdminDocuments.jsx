@@ -42,7 +42,6 @@ function DocumentCard({ doc, onAction }) {
         alert("Impossible de charger le document.");
       }
     };
-  };
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
