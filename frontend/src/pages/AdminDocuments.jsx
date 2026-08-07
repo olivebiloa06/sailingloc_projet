@@ -36,12 +36,18 @@ function DocumentCard({ doc, onAction }) {
 
     const viewDoc = async () => {
   try {
-        const { data } = await api.get(`/documents/${doc.id}/file`);
-        window.open(data.url, "_blank");
-      } catch {
-        alert("Impossible de charger le document.");
-      }
-    };
+    const { data } = await api.get(`/documents/${doc.id}/file`);
+    const a = document.createElement("a");
+    a.href = data.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch {
+    alert("Impossible de charger le document.");
+  }
+};
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
