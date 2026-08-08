@@ -30,10 +30,11 @@ function hashToken(raw) {
 //   tant qu'on est sur localhost, mais on désactive explicitement pour éviter
 //   toute surprise sur un environnement de dev non-localhost)
 function refreshCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/api/auth",
     maxAge: REFRESH_TOKEN_TTL_MS,
   };

@@ -35,6 +35,9 @@ const favoriteRoutes = require("./routes/favoriteRoutes");
 const app = express();
 const httpServer = createServer(app);
 
+const app = express();
+app.set("trust proxy", 1); 
+
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
