@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { isValidEmail } from "../utils/validators";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 export default function Login() {
   const { login } = useAuth();
@@ -48,6 +49,11 @@ export default function Login() {
       setSubmitting(false);
     }
   };
+
+
+      // SEO meta tags
+
+  usePageMeta({ title: "Connexion", url: "/login" });
 
   return (
     <div className="flex min-h-screen">

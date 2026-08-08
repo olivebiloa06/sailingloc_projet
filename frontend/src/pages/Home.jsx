@@ -5,6 +5,7 @@ import BoatMark from "../components/BoatMark";
 import Carousel from "../components/Carousel";
 import Reveal from "../components/Reveal";
 import api from "../services/api";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // Images hero et destinations depuis les assets locaux
 import heroImg from "../assets/pexels-elijahjcobb-35599466.jpg";
@@ -168,6 +169,13 @@ function TestimonialCard({ testimonial }) {
 
 export default function Home() {
   const [reviews, setReviews] = useState([]);
+
+ // SEO meta tags
+  usePageMeta({
+    title: "Location de bateaux entre particuliers",
+    description: "Louez un voilier, catamaran ou bateau à moteur directement auprès d'un particulier. Paiement sécurisé, contrat automatique, messagerie intégrée.",
+    url: "/",
+  });
 
   useEffect(() => {
     // Charge les derniers avis publiés depuis l'API (du plus récent au plus ancien)

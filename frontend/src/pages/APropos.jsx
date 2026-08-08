@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Reveal from "../components/Reveal";
 import BoatMark from "../components/BoatMark";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const VALEURS = [
   { icon: "🛡️", titre: "Confiance", desc: "Profils vérifiés, documents contrôlés par notre équipe avant toute publication." },
@@ -41,6 +42,13 @@ const FAQ = [
 ];
 
 export default function APropos() {
+
+    // SEO meta tags
+
+usePageMeta({ title: "À propos", 
+  description: "Découvrez l'équipe SailingLoc et notre mission.", 
+  url: "/a-propos" });
+
   return (
     <div className="bg-cloud">
       {/* Hero */}

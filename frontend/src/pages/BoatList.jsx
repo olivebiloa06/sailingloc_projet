@@ -4,6 +4,7 @@ import api from "../services/api";
 import { resolveImageUrl } from "../utils/assets";
 import BoatMark from "../components/BoatMark";
 import FavoriteButton from "../components/FavoriteButton";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // Images de fallback pour les bateaux sans photo uploadée
 import fallback1 from "../assets/bergadder-ship-10038606_1920.jpg";
@@ -145,6 +146,16 @@ export default function BoatList() {
       setLoading(false);
     }
   }, []);
+
+// SEO meta tags
+
+  usePageMeta({
+    title: "Tous les bateaux",
+    description: "Parcourez notre sélection de voiliers, catamarans et bateaux à moteur disponibles à la location.",
+    url: "/boats"
+  });
+
+  // ... reste du code
 
   // Si l'URL change (nouvelle recherche depuis le header, ou navigation
   // directe vers /boats?...), on resynchronise les filtres affichés et on

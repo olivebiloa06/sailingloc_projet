@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import api from "../services/api";
 import { isValidEmail, getPasswordStrengthError } from "../utils/validators";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 // Documents obligatoires selon le rôle du compte créé.
 // La validation se fait côté admin (pas automatiquement) — le compte existe
@@ -204,6 +205,10 @@ export default function Register() {
   if (showDocStep) {
     return <OwnerDocumentsStep onComplete={() => navigate("/mon-compte", { replace: true })} />;
   }
+
+    // SEO meta tags
+    
+  usePageMeta({ title: "Créer un compte", url: "/register" });
 
   return (
     <div className="flex min-h-screen">

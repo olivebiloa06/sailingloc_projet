@@ -127,7 +127,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.NODE_ENV === "test" ? 0 : (process.env.PORT || 5000);
 
 const startServer = async () => {
   try {
@@ -149,4 +149,9 @@ const startServer = async () => {
   }
 };
 
-startServer();
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = httpServer;

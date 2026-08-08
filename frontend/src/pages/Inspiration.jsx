@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import Reveal from "../components/Reveal";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const CATEGORIES = ["Tous", "Actualités nautiques", "Guide de voyage", "Conseils de navigation", "Destination tendance"];
 
@@ -82,6 +83,12 @@ export default function Inspiration() {
   const [activeCategory, setActiveCategory] = useState("Tous");
   const [openArticle, setOpenArticle] = useState(null);
   const [openGradient, setOpenGradient] = useState("");
+
+// SEO meta tags
+
+  usePageMeta({ title: "Inspiration", 
+    description: "Actualités nautiques, guides de voyage et destinations tendance.",
+     url: "/inspiration" });
 
   useEffect(() => {
     api.get("/articles")

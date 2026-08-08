@@ -3,8 +3,15 @@ import { useNavigate } from "react-router-dom";
 import StaticPage from "../components/StaticPage";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 export default function Contact() {
+
+  // SEO meta tags
+
+  usePageMeta({ title: "Contact", url: "/contact" });
+
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ nom: user?.prenom && user?.nom ? `${user.prenom} ${user.nom}` : "", email: user?.email || "", sujet: "", message: "" });

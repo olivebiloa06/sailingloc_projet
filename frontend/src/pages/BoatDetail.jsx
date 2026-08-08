@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
 import BoatMark from "../components/BoatMark";
+import { usePageMeta } from "../hooks/usePageMeta";
 
 const BOAT_TYPE_LABELS = {
   voilier: "Voilier",
@@ -50,9 +51,22 @@ export default function BoatDetail() {
     dateFin: "",
     nombrePersonnes: 1,
   });
+
+
+  // SEO meta tags
+
+  usePageMeta({
+  title: boat?.nom,
+  description: boat?.description,
+  url: `/boats/${id}`,
+  type: "product"
+});
+
   const [bookingError, setBookingError] = useState("");
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
+
+
 
   useEffect(() => {
     let active = true;
