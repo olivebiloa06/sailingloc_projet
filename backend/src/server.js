@@ -33,10 +33,9 @@ const swaggerSpec = require("./config/swagger");
 const favoriteRoutes = require("./routes/favoriteRoutes");
 
 const app = express();
+app.set("trust proxy", 1);
 const httpServer = createServer(app);
 
-const app = express();
-app.set("trust proxy", 1); 
 
 const io = new Server(httpServer, {
   cors: {
