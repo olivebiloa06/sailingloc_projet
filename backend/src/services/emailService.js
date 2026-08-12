@@ -7,48 +7,84 @@ const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || "smtp.gmail.com",
   port: Number(process.env.EMAIL_PORT) || 587,
   secure: false,
+  // Render a un support IPv6 sortant instable : sans ça, Node essaie de
+  // joindre smtp.gmail.com via une adresse IPv6 et plante avec ENETUNREACH.
+  // family: 4 force une connexion IPv4, qui fonctionne de manière fiable.
+  family: 4,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD || process.env.EMAIL_PASS,
   },
 });
 
+// Vérifie la connexion SMTP au démarrage du serveur, pour voir l'erreur
+// dans les logs Render IMMÉDIATEMENT plutôt que d'attendre qu'un utilisateur réserve.
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ SMTP indisponible au démarrage :", error.message);
+    console.error("   -> Vérifie EMAIL_USER et EMAIL_PASSWORD sur Render (Environment).");
+  } else {
+    console.log("✅ SMTP prêt à envoyer des emails (compte:", process.env.EMAIL_USER, ")");
+  }
+});
+
 const isProduction = process.env.NODE_ENV === "production";
 
-// Télécharge un fichier depuis une URL et retourne un buffer
+// Télécharge un fichier depuis une URL et retourne un buffer.
+// Vérifie maintenant le code de statut HTTP pour ne jamais joindre une page
+// d'erreur Cloudinary (401/403) à la place du vrai PDF.
 function fetchBuffer(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, (res) => {
-      const chunks = [];
-      res.on("data", (chunk) => chunks.push(chunk));
-      res.on("end", () => resolve(Buffer.concat(chunks)));
-      res.on("error", reject);
-    }).on("error", reject);
+    https
+      .get(url, (res) => {
+        if (res.statusCode && res.statusCode >= 400) {
+          reject(new Error(`Échec téléchargement contrat : HTTP ${res.statusCode} sur ${url}`));
+          res.resume();
+          return;
+        }
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => resolve(Buffer.concat(chunks)));
+        res.on("error", reject);
+      })
+      .on("error", reject);
   });
 }
 
 exports.sendEmail = async ({ to, subject, html, attachments = [] }) => {
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.EMAIL_FROM || `"SailingLoc" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
       attachments,
     });
+    console.log(`✅ Email envoyé à ${to} — messageId: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Erreur envoi email:", error.message);
+    // Log détaillé et explicite : on affiche le code d'erreur SMTP s'il existe,
+    // ça permet de distinguer immédiatement les causes courantes.
+    console.error("❌ Erreur envoi email vers", to, ":", error.message);
+    if (error.code) console.error("   Code erreur SMTP:", error.code);
+    if (error.responseCode) console.error("   Code réponse SMTP:", error.responseCode);
+    if (error.code === "EAUTH" || error.responseCode === 535) {
+      console.error("   -> Identifiants SMTP refusés. Vérifie que EMAIL_PASSWORD est bien");
+      console.error("      le mot de passe d'application à 16 caractères (sans espaces),");
+      console.error("      pas le mot de passe Gmail normal.");
+    }
+    // On ne relance plus l'erreur en silence : on la retourne pour que
+    // le controller appelant puisse décider quoi faire (log, retry, alerte...).
+    return { success: false, error: error.message };
   }
 };
 
 exports.sendPaymentConfirmation = async (userEmail, payment, booking, contract) => {
   const attachments = [];
 
-  // Attache le contrat PDF si disponible
   if (contract?.urlPdf) {
     try {
       if (isProduction && contract.urlPdf.startsWith("http")) {
-        // En prod → télécharge depuis Cloudinary et attache en mémoire
         const buffer = await fetchBuffer(contract.urlPdf);
         attachments.push({
           filename: `contrat-sailingloc-${booking?.id || ""}.pdf`,
@@ -56,7 +92,6 @@ exports.sendPaymentConfirmation = async (userEmail, payment, booking, contract) 
           contentType: "application/pdf",
         });
       } else {
-        // En local → lit depuis le disque
         const contractsDir = path.join(__dirname, "../../uploads/contracts");
         const filePath = path.join(contractsDir, contract.urlPdf);
         if (fs.existsSync(filePath)) {
@@ -68,7 +103,10 @@ exports.sendPaymentConfirmation = async (userEmail, payment, booking, contract) 
         }
       }
     } catch (e) {
-      console.error("Impossible d'attacher le contrat:", e.message);
+      // On log clairement que le contrat n'a pas pu être joint, sans bloquer
+      // l'envoi de l'email de confirmation lui-même (mieux vaut un email sans
+      // pièce jointe qu'aucun email du tout).
+      console.error("⚠️ Impossible d'attacher le contrat au mail:", e.message);
     }
   }
 
@@ -80,7 +118,7 @@ exports.sendPaymentConfirmation = async (userEmail, payment, booking, contract) 
     ? new Date(booking.dateFin).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
     : "—";
 
-  await exports.sendEmail({
+  return exports.sendEmail({
     to: userEmail,
     subject: `✅ Réservation confirmée — ${boat?.nom || "Votre bateau"}`,
     html: `
@@ -107,7 +145,7 @@ exports.sendPaymentConfirmation = async (userEmail, payment, booking, contract) 
                 <td style="padding:8px 0;font-weight:700;color:#0A2A43;text-align:right">${booking?.montantTotal || payment?.montant || "—"} €</td></tr>
           </table>
 
-          ${contract ? `<p style="color:#059669;font-size:13px">📄 Votre contrat de location est joint à cet email en PDF.</p>` : ""}
+          ${contract && attachments.length ? `<p style="color:#059669;font-size:13px">📄 Votre contrat de location est joint à cet email en PDF.</p>` : ""}
 
           <a href="${process.env.FRONTEND_URL}/mes-reservations"
              style="display:inline-block;margin-top:16px;background:#0A2A43;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
@@ -135,7 +173,7 @@ exports.sendOwnerBookingNotification = async (ownerEmail, booking) => {
     : "—";
   const revenuNet = booking?.montantTotal ? Math.round(booking.montantTotal * 0.9) : "—";
 
-  await exports.sendEmail({
+  return exports.sendEmail({
     to: ownerEmail,
     subject: `💰 Nouvelle réservation confirmée — ${boat?.nom || "Votre bateau"}`,
     html: `
