@@ -11,9 +11,9 @@ export function AuthProvider({ children }) {
   // HttpOnly posé par le backend est encore valide, on récupère un nouvel
   // access token ET le profil utilisateur en un seul appel, sans que
   // l'utilisateur ait à se reconnecter à chaque rechargement de page.
-  const restoreSession = useCallback(async () => {
+    const restoreSession = useCallback(async () => {
     try {
-      const { data } = await api.post("/auth/refresh");
+      const { data } = await api.post("/auth/refresh", null, { timeout: 30000 });
       setAccessToken(data.accessToken);
       setUser(data.user);
     } catch {
@@ -23,6 +23,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, []);
+
 
   useEffect(() => {
     restoreSession();

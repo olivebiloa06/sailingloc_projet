@@ -2,11 +2,12 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  withCredentials: true,
+  timeout: 30000,
   // Indispensable pour que le cookie HttpOnly du refresh token soit envoyé
   // et reçu : sans ça, /auth/refresh et /auth/logout ne voient jamais le
   // cookie (même en local, localhost:5173 et localhost:5000 sont deux
   // origines différentes pour le navigateur).
-  withCredentials: true,
 });
 
 // L'access token n'est plus stocké en localStorage : il vit uniquement en
