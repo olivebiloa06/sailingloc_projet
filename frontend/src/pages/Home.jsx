@@ -178,14 +178,10 @@ export default function Home() {
   });
 
   useEffect(() => {
-    // Charge les derniers avis publiés depuis l'API (du plus récent au plus ancien)
-    api.get("/admin/reviews")
-      .then(({ data }) => {
-        const sorted = (data.reviews || [])
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          .slice(0, 6); // max 6 avis sur la homepage
-        setReviews(sorted);
-      })
+    // Charge les derniers avis publiés (route publique : la homepage est
+    // visible sans être connecté, on ne peut pas taper /admin/reviews ici)
+    api.get("/reviews", { params: { limit: 6 } })
+      .then(({ data }) => setReviews(data.reviews || []))
       .catch(() => {});
   }, []);
   return (

@@ -38,6 +38,33 @@ exports.getReviewsByBoat = async (req, res) => {
 };
 
 // =========================
+// DERNIERS AVIS (public)
+// =========================
+// Utilisé par la homepage. Volontairement limité aux champs affichables :
+// pas d'email ni de données de réservation, la route est ouverte à tous.
+exports.getLatestReviews = async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 6, 20);
+
+    const reviews = await Review.findAll({
+      attributes: ["id", "note", "commentaire", "createdAt"],
+      include: [
+        {
+          model: User,
+          attributes: ["id", "prenom", "nom", "role"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit,
+    });
+
+    return res.status(200).json({ reviews, count: reviews.length });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// =========================
 // CRÉER UN AVIS (locataire authentifié)
 // =========================
 exports.createReview = async (req, res) => {

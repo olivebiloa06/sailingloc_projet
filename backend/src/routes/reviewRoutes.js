@@ -3,6 +3,9 @@ const router = express.Router();
 const reviewController = require("../controllers/reviewController");
 const { verifyToken } = require("../middlewares/authMiddleware");
 
+// Public — derniers avis affichés sur la homepage
+router.get("/", reviewController.getLatestReviews);
+
 // Public — utilisé sur la fiche bateau et pour la note sur les cartes
 router.get("/boat/:boatId", reviewController.getReviewsByBoat);
 

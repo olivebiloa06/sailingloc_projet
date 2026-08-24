@@ -67,10 +67,11 @@ api.interceptors.response.use(
         config.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(config);
       } catch {
+        // Le refresh a échoué : on efface juste le token en mémoire. Pas de
+        // redirection forcée ici — un 401 sur un appel secondaire ne doit pas
+        // éjecter un visiteur d'une page publique. C'est ProtectedRoute qui
+        // renvoie vers /login pour les pages qui l'exigent réellement.
         setAccessToken(null);
-        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-          window.location.href = "/login";
-        }
       }
     }
 
