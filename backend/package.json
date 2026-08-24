@@ -55,7 +55,11 @@
     "coverageDirectory": "coverage",
     "coverageThreshold": {},
     "collectCoverageFrom": [
-      "src/__tests__/**/*.js"
+      "src/**/*.js",
+      "!src/__tests__/**",
+      "!src/seeders/**",
+      "!src/config/**",
+      "!src/server.js"
     ]
   }
 }

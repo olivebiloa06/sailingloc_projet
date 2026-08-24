@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const { sequelize, Booking, Boat, Availability, Payment, User } = require("../models");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const paypalService = require("../services/paypalService");
+const { calculerMontant, calculerCommission, validerDates, validerPersonnes } = require("../utils/bookingCalculations");
 
 // =========================
 // CRÉER UNE RÉSERVATION
@@ -20,7 +21,7 @@ exports.createBooking = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { boatId, dateDebut, dateFin, nombrePersonnes } = req.body;
+    const { boatId, dateDebut, dateFin, nombrePersonnes = 1 } = req.body;
 
     if (!boatId || !dateDebut || !dateFin) {
       await transaction.rollback();
@@ -32,7 +33,7 @@ exports.createBooking = async (req, res) => {
     const start = new Date(dateDebut);
     const end = new Date(dateFin);
 
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+    if (!validerDates(dateDebut, dateFin)) {
       await transaction.rollback();
       return res.status(400).json({
         message: "La date de fin doit être après la date de début.",
@@ -52,6 +53,16 @@ exports.createBooking = async (req, res) => {
       await transaction.rollback();
       return res.status(404).json({
         message: "Bateau introuvable",
+      });
+    }
+
+    // Le nombre de voyageurs déclaré ne doit pas dépasser la capacité du
+    // bateau — cette vérification n'existait pas avant : n'importe quel
+    // nombre était accepté tel quel.
+    if (!validerPersonnes(nombrePersonnes, boat.capacite)) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: `Le nombre de voyageurs doit être compris entre 1 et ${boat.capacite} (capacité du bateau).`,
       });
     }
 
@@ -95,9 +106,8 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    const nombreJours = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-    const montantTotal = nombreJours * boat.prixJour;
-    const commission = montantTotal * 0.1;
+    const montantTotal = calculerMontant(boat.prixJour, dateDebut, dateFin);
+    const commission = calculerCommission(montantTotal);
 
     const booking = await Booking.create(
       {

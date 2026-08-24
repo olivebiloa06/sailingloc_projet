@@ -1,28 +1,20 @@
 /**
  * Tests unitaires — Authentification JWT
  * Génération, vérification, expiration, token invalide
+ *
+ * genererAccessToken/verifierAccessToken utilisent le vrai
+ * generateAccessToken exporté par authController.js (et jwt.verify avec
+ * process.env.JWT_SECRET, exactement comme authMiddleware.js) : ces tests
+ * vérifient le code réellement exécuté en production, pas une copie.
  */
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-
-// ============================================================
-// Fonctions extraites de authController.js
-// ============================================================
-
-const JWT_SECRET = "test_secret_sailingloc_jest";
-const JWT_REFRESH_SECRET = "test_refresh_secret_jest";
-
-function genererAccessToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" });
-}
-
-function genererRefreshToken(payload) {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: "7d" });
-}
+const { generateAccessToken: genererAccessToken, sanitizeUser } = require("../controllers/authController");
+const { validatePasswordFormat } = require("../utils/validators");
 
 function verifierAccessToken(token) {
-  return jwt.verify(token, JWT_SECRET);
+  return jwt.verify(token, process.env.JWT_SECRET);
 }
 
 function hashPassword(password) {
@@ -49,11 +41,36 @@ describe("Génération de tokens JWT", () => {
     expect(token.split(".").length).toBe(3);
   });
 
-  test("genererRefreshToken retourne un token différent", () => {
-    const payload = { id: 1 };
-    const access = genererAccessToken(payload);
-    const refresh = genererRefreshToken(payload);
-    expect(access).not.toBe(refresh);
+});
+
+// Les refresh tokens ne sont PAS des JWT : ce sont des tokens opaques
+// aléatoires (voir utils/tokens.js), stockés hachés en base — un JWT signé
+// pourrait être décodé et inspecté par le client, un token opaque non.
+describe("Génération du refresh token opaque (createRefreshToken)", () => {
+  const { createRefreshToken } = require("../utils/tokens");
+
+  test("Le token brut et son hash sont différents", () => {
+    const { raw, hash } = createRefreshToken();
+    expect(raw).not.toBe(hash);
+  });
+
+  test("Deux appels génèrent des tokens différents (aléatoire)", () => {
+    const a = createRefreshToken();
+    const b = createRefreshToken();
+    expect(a.raw).not.toBe(b.raw);
+  });
+
+  test("La date d'expiration est dans le futur (~7 jours)", () => {
+    const { expiresAt } = createRefreshToken();
+    const joursRestants = (expiresAt - new Date()) / (1000 * 60 * 60 * 24);
+    expect(joursRestants).toBeGreaterThan(6.9);
+    expect(joursRestants).toBeLessThan(7.1);
+  });
+
+  test("Le hash est stable pour un même token brut (sha256)", () => {
+    const { hashToken } = require("../utils/tokens");
+    const { raw, hash } = createRefreshToken();
+    expect(hashToken(raw)).toBe(hash);
   });
 });
 
@@ -76,7 +93,7 @@ describe("Vérification de tokens JWT", () => {
   });
 
   test("Token expiré → lève TokenExpiredError", () => {
-    const token = jwt.sign({ id: 1 }, JWT_SECRET, { expiresIn: "-1s" });
+    const token = jwt.sign({ id: 1 }, process.env.JWT_SECRET, { expiresIn: "-1s" });
     expect(() => verifierAccessToken(token)).toThrow(jwt.TokenExpiredError);
   });
 
@@ -159,35 +176,61 @@ describe("Hash et vérification de mot de passe (bcrypt)", () => {
   });
 });
 
-describe("Sécurité — validation format mot de passe", () => {
-  function validerFormatMotDePasse(mdp) {
-    if (!mdp || mdp.length < 8) return false;
-    if (!/[A-Z]/.test(mdp)) return false;
-    if (!/[0-9]/.test(mdp)) return false;
-    return true;
-  }
-
-  test("Mot de passe valide : 8+ car, majuscule, chiffre", () => {
-    expect(validerFormatMotDePasse("Sailing2026")).toBe(true);
+// Utilise le vrai validatePasswordFormat de src/utils/validators.js, branché
+// sur authController.register ET resetPassword — y compris l'exigence de
+// caractère spécial, absente de l'ancienne copie de ce test.
+describe("Sécurité — validation format mot de passe (validatePasswordFormat)", () => {
+  test("Mot de passe valide : 8+ car, majuscule, chiffre, caractère spécial", () => {
+    expect(validatePasswordFormat("Sailing2026!").valid).toBe(true);
   });
 
   test("Trop court (< 8 caractères) → invalide", () => {
-    expect(validerFormatMotDePasse("Ab1")).toBe(false);
+    expect(validatePasswordFormat("Ab1!").valid).toBe(false);
   });
 
   test("Pas de majuscule → invalide", () => {
-    expect(validerFormatMotDePasse("sailing2026")).toBe(false);
+    expect(validatePasswordFormat("sailing2026!").valid).toBe(false);
   });
 
   test("Pas de chiffre → invalide", () => {
-    expect(validerFormatMotDePasse("SailingLoc!")).toBe(false);
+    expect(validatePasswordFormat("SailingLoc!").valid).toBe(false);
+  });
+
+  test("Pas de caractère spécial → invalide", () => {
+    expect(validatePasswordFormat("Sailing2026").valid).toBe(false);
   });
 
   test("Mot de passe vide → invalide", () => {
-    expect(validerFormatMotDePasse("")).toBe(false);
+    expect(validatePasswordFormat("").valid).toBe(false);
   });
 
   test("null → invalide", () => {
-    expect(validerFormatMotDePasse(null)).toBe(false);
+    expect(validatePasswordFormat(null).valid).toBe(false);
+  });
+});
+
+// sanitizeUser est la seule barrière entre la base (motDePasse haché) et la
+// réponse JSON envoyée au client — un oubli ici ferait fuiter le hash.
+describe("sanitizeUser — le hash du mot de passe ne sort jamais", () => {
+  const fakeUser = {
+    toJSON: () => ({
+      id: 7,
+      nom: "Martin",
+      prenom: "Sophie",
+      email: "sophie@test.fr",
+      motDePasse: "$2a$10$hashedvaluehere",
+      role: "locataire",
+    }),
+  };
+
+  test("motDePasse est absent du résultat", () => {
+    const safe = sanitizeUser(fakeUser);
+    expect(safe.motDePasse).toBeUndefined();
+  });
+
+  test("Les autres champs sont conservés", () => {
+    const safe = sanitizeUser(fakeUser);
+    expect(safe.email).toBe("sophie@test.fr");
+    expect(safe.role).toBe("locataire");
   });
 });

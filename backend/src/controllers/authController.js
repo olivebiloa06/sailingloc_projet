@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { User, RefreshToken } = require("../models");
 const { sendEmail } = require("../services/emailService");
+const { isValidEmail, validatePasswordFormat } = require("../utils/validators");
 const {
   ACCESS_TOKEN_TTL,
   REFRESH_COOKIE_NAME,
@@ -16,9 +17,6 @@ const {
 // vers admin se fait uniquement via PATCH /api/admin/users/:id/role, route
 // déjà protégée par authorizeRoles("admin").
 const ALLOWED_SELF_ROLES = ["locataire", "proprietaire"];
-
-const isValidEmail = (email) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 
 // Le defaultScope du modèle User exclut déjà motDePasse, mais on garde cette
 // étape explicite en plus (défense en profondeur) : même si un autre point du
@@ -41,6 +39,12 @@ const generateAccessToken = (user) =>
       expiresIn: ACCESS_TOKEN_TTL,
     }
   );
+
+// Exportées pour les tests unitaires (génération/vérification de token,
+// exclusion du mot de passe) — le code testé est le code réellement exécuté
+// en production, pas une copie.
+exports.generateAccessToken = generateAccessToken;
+exports.sanitizeUser = sanitizeUser;
 
 // Crée un nouveau refresh token en base pour cet utilisateur et pose le
 // cookie HttpOnly correspondant sur la réponse.
@@ -76,26 +80,10 @@ exports.register = async (req, res) => {
       });
     }
 
-          if (motDePasse.length < 8) {
-        return res.status(400).json({
-          message: "Le mot de passe doit contenir au moins 8 caractères.",
-        });
-      }
-      if (!/[A-Z]/.test(motDePasse)) {
-        return res.status(400).json({
-          message: "Le mot de passe doit contenir au moins une majuscule.",
-        });
-      }
-      if (!/[0-9]/.test(motDePasse)) {
-        return res.status(400).json({
-          message: "Le mot de passe doit contenir au moins un chiffre.",
-        });
-      }
-      if (!/[^A-Za-z0-9]/.test(motDePasse)) {
-        return res.status(400).json({
-          message: "Le mot de passe doit contenir au moins un caractère spécial.",
-        });
-      }
+    const passwordCheck = validatePasswordFormat(motDePasse);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ message: passwordCheck.message });
+    }
 
     // Vérifier si email existe déjà
     const existingUser = await User.findOne({
@@ -394,10 +382,13 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Token et nouveau mot de passe requis." });
     }
 
-    if (motDePasse.length < 8) {
-      return res.status(400).json({
-        message: "Le mot de passe doit contenir au moins 8 caractères.",
-      });
+    // Mêmes règles qu'à l'inscription — avant, la réinitialisation
+    // n'exigeait que 8 caractères, ce qui permettait de contourner les
+    // exigences de complexité (majuscule/chiffre/caractère spécial) posées
+    // au moment du register.
+    const passwordCheck = validatePasswordFormat(motDePasse);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ message: passwordCheck.message });
     }
 
     const user = await User.unscoped().findOne({

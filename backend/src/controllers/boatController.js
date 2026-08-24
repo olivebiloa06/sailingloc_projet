@@ -1,5 +1,25 @@
 const { Op } = require("sequelize");
 const { Boat, User, Availability, Document, Review, sequelize } = require("../models");
+const { isValidPrix, isValidCapacite, isValidLongueur, isValidBoatType } = require("../utils/validators");
+
+// Valide les champs numériques/enum d'un bateau — utilisé à la création ET
+// à la modification. Chaque champ n'est vérifié que s'il est fourni (à la
+// modification, un propriétaire ne renvoie pas forcément tous les champs).
+function validateBoatFields({ prixJour, capacite, longueur, type }) {
+  if (prixJour !== undefined && !isValidPrix(prixJour)) {
+    return "Le prix par jour doit être un nombre compris entre 0 et 100 000 €.";
+  }
+  if (capacite !== undefined && !isValidCapacite(capacite)) {
+    return "La capacité doit être un nombre entier compris entre 1 et 50 personnes.";
+  }
+  if (longueur !== undefined && longueur !== null && !isValidLongueur(longueur)) {
+    return "La longueur doit être un nombre compris entre 0 et 200 mètres.";
+  }
+  if (type !== undefined && !isValidBoatType(type)) {
+    return "Type de bateau invalide.";
+  }
+  return null;
+}
 
 // Champs qu'un propriétaire est autorisé à modifier lui-même sur son bateau.
 // userId et statut sont volontairement exclus : un propriétaire ne doit pas
@@ -60,6 +80,11 @@ exports.createBoat = async (req, res) => {
       latitude,
       longitude,
     } = req.body;
+
+    const validationError = validateBoatFields({ prixJour, capacite, longueur, type });
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
 
     const boat = await Boat.create({
       nom,
@@ -277,6 +302,11 @@ exports.updateBoat = async (req, res) => {
               OWNER_EDITABLE_FIELDS.includes(key)
             )
           );
+
+    const validationError = validateBoatFields(payload);
+    if (validationError) {
+      return res.status(400).json({ message: validationError });
+    }
 
     await boat.update(payload);
 

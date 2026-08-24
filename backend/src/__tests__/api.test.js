@@ -165,6 +165,36 @@ describe("API Bateaux — /api/boats", () => {
     const res = await request(app).post("/api/boats").send({ nom: "Test", type: "voilier" });
     expect(res.status).toBe(401);
   });
+
+  // Un admin ne passe pas par la vérification "document validé", ce qui permet
+  // de tester la validation des champs (prix/capacité/type) isolément.
+  test("POST /boats → 400 si prixJour négatif", async () => {
+    const res = await request(app).post("/api/boats")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "admin" })}`)
+      .send({ nom: "Test", type: "voilier", description: "d", localisation: "Nice", prixJour: -50, capacite: 4 });
+    expect(res.status).toBe(400);
+  });
+
+  test("POST /boats → 400 si capacite = 0", async () => {
+    const res = await request(app).post("/api/boats")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "admin" })}`)
+      .send({ nom: "Test", type: "voilier", description: "d", localisation: "Nice", prixJour: 100, capacite: 0 });
+    expect(res.status).toBe(400);
+  });
+
+  test("POST /boats → 400 si type invalide", async () => {
+    const res = await request(app).post("/api/boats")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "admin" })}`)
+      .send({ nom: "Test", type: "sous-marin", description: "d", localisation: "Nice", prixJour: 100, capacite: 4 });
+    expect(res.status).toBe(400);
+  });
+
+  test("POST /boats → 201 avec des champs valides", async () => {
+    const res = await request(app).post("/api/boats")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "admin" })}`)
+      .send({ nom: "Test", type: "voilier", description: "d", localisation: "Nice", prixJour: 100, capacite: 4 });
+    expect(res.status).toBe(201);
+  });
 });
 
 // RÉSERVATIONS
@@ -250,6 +280,40 @@ describe("API Admin — /api/admin", () => {
       .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`);
     expect(res.status).toBe(403);
   });
+
+  test("GET /bookings → 401 sans token", async () => {
+    const res = await request(app).get("/api/admin/bookings");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET /bookings → 403 si non admin", async () => {
+    const res = await request(app).get("/api/admin/bookings")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`);
+    expect(res.status).toBe(403);
+  });
+
+  test("GET /bookings → 200 si admin", async () => {
+    const res = await request(app).get("/api/admin/bookings")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "admin" })}`);
+    expect(res.status).toBe(200);
+  });
+
+  test("GET /payments → 401 sans token", async () => {
+    const res = await request(app).get("/api/admin/payments");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET /payments → 403 si non admin", async () => {
+    const res = await request(app).get("/api/admin/payments")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`);
+    expect(res.status).toBe(403);
+  });
+
+  test("GET /payments → 200 si admin", async () => {
+    const res = await request(app).get("/api/admin/payments")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "admin" })}`);
+    expect(res.status).toBe(200);
+  });
 });
 
 // AVIS
@@ -264,6 +328,34 @@ describe("API Avis — /api/reviews", () => {
       .send({ boatId: 1, note: 5, commentaire: "Super" });
     expect(res.status).toBe(401);
   });
+
+  test("POST /reviews → 400 si bookingId manquant", async () => {
+    const res = await request(app).post("/api/reviews")
+      .set("Authorization", `Bearer ${makeToken()}`)
+      .send({ note: 5 });
+    expect(res.status).toBe(400);
+  });
+
+  test("POST /reviews → 400 si note hors de 1-5", async () => {
+    const res = await request(app).post("/api/reviews")
+      .set("Authorization", `Bearer ${makeToken()}`)
+      .send({ bookingId: 1, note: 8 });
+    expect(res.status).toBe(400);
+  });
+
+  test("POST /reviews → 403 si la réservation n'appartient pas à l'utilisateur (mock userId=1)", async () => {
+    const res = await request(app).post("/api/reviews")
+      .set("Authorization", `Bearer ${makeToken({ id: 99, role: "locataire" })}`)
+      .send({ bookingId: 1, note: 5 });
+    expect(res.status).toBe(403);
+  });
+
+  test("POST /reviews → 400 si la réservation n'est pas confirmée/terminée (mock statut=en_attente)", async () => {
+    const res = await request(app).post("/api/reviews")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`)
+      .send({ bookingId: 1, note: 5 });
+    expect(res.status).toBe(400);
+  });
 });
 
 // ARTICLES
@@ -271,5 +363,185 @@ describe("API Articles — /api/articles", () => {
   test("GET /articles → 200 public", async () => {
     const res = await request(app).get("/api/articles");
     expect(res.status).toBe(200);
+  });
+});
+
+// DISPONIBILITÉS
+describe("API Disponibilités — /api/availabilities", () => {
+  test("GET /boat/:boatId → accessible publiquement", async () => {
+    const res = await request(app).get("/api/availabilities/boat/1");
+    expect(res.status).toBe(200);
+  });
+
+  test("POST / → 401 sans token", async () => {
+    const res = await request(app).post("/api/availabilities")
+      .send({ boatId: 1, dateDebut: "2026-09-01", dateFin: "2026-09-10", statut: "disponible" });
+    expect(res.status).toBe(401);
+  });
+
+  test("POST / → 403 si locataire (rôle non autorisé)", async () => {
+    const res = await request(app).post("/api/availabilities")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`)
+      .send({ boatId: 1, dateDebut: "2026-09-01", dateFin: "2026-09-10", statut: "disponible" });
+    expect(res.status).toBe(403);
+  });
+
+  test("POST / → 201 si propriétaire du bateau (userId 2 dans le mock)", async () => {
+    const res = await request(app).post("/api/availabilities")
+      .set("Authorization", `Bearer ${makeToken({ id: 2, role: "proprietaire" })}`)
+      .send({ boatId: 1, dateDebut: "2026-09-01", dateFin: "2026-09-10", statut: "disponible" });
+    expect(res.status).toBe(201);
+  });
+
+  test("PUT /:id → 401 sans token", async () => {
+    const res = await request(app).put("/api/availabilities/1").send({ statut: "indisponible" });
+    expect(res.status).toBe(401);
+  });
+
+  test("DELETE /:id → 401 sans token", async () => {
+    const res = await request(app).delete("/api/availabilities/1");
+    expect(res.status).toBe(401);
+  });
+});
+
+// FAVORIS
+describe("API Favoris — /api/favorites", () => {
+  test("GET / → 401 sans token", async () => {
+    const res = await request(app).get("/api/favorites");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET / → 200 avec token", async () => {
+    const res = await request(app).get("/api/favorites")
+      .set("Authorization", `Bearer ${makeToken()}`);
+    expect(res.status).toBe(200);
+  });
+
+  test("POST /toggle → 401 sans token", async () => {
+    const res = await request(app).post("/api/favorites/toggle").send({ boatId: 1 });
+    expect(res.status).toBe(401);
+  });
+
+  test("POST /toggle → 400 si boatId manquant", async () => {
+    const res = await request(app).post("/api/favorites/toggle")
+      .set("Authorization", `Bearer ${makeToken()}`)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  test("POST /toggle → 201 ajoute le favori (aucun favori existant dans le mock)", async () => {
+    const res = await request(app).post("/api/favorites/toggle")
+      .set("Authorization", `Bearer ${makeToken()}`)
+      .send({ boatId: 1 });
+    expect(res.status).toBe(201);
+    expect(res.body.liked).toBe(true);
+  });
+
+  test("GET /check/:boatId → 401 sans token", async () => {
+    const res = await request(app).get("/api/favorites/check/1");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET /check/:boatId → 200 avec token", async () => {
+    const res = await request(app).get("/api/favorites/check/1")
+      .set("Authorization", `Bearer ${makeToken()}`);
+    expect(res.status).toBe(200);
+    expect(res.body.liked).toBe(false);
+  });
+});
+
+// DASHBOARD PROPRIÉTAIRE
+describe("API Dashboard — /api/dashboard", () => {
+  test("GET /owner → 401 sans token", async () => {
+    const res = await request(app).get("/api/dashboard/owner");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET /owner → 403 si locataire", async () => {
+    const res = await request(app).get("/api/dashboard/owner")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`);
+    expect(res.status).toBe(403);
+  });
+
+  test("GET /owner → 200 si propriétaire", async () => {
+    const res = await request(app).get("/api/dashboard/owner")
+      .set("Authorization", `Bearer ${makeToken({ id: 2, role: "proprietaire" })}`);
+    expect(res.status).toBe(200);
+  });
+
+  test("GET /owner/stats → 401 sans token", async () => {
+    const res = await request(app).get("/api/dashboard/owner/stats");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET /owner/stats → 403 si locataire", async () => {
+    const res = await request(app).get("/api/dashboard/owner/stats")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`);
+    expect(res.status).toBe(403);
+  });
+});
+
+// MESSAGERIE
+describe("API Messagerie — /api/conversations", () => {
+  test("GET / → 401 sans token", async () => {
+    const res = await request(app).get("/api/conversations");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET / → 200 avec token (liste des conversations)", async () => {
+    const res = await request(app).get("/api/conversations")
+      .set("Authorization", `Bearer ${makeToken()}`);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.conversations)).toBe(true);
+  });
+
+  test("POST / → 401 sans token", async () => {
+    const res = await request(app).post("/api/conversations").send({ otherUserId: 2 });
+    expect(res.status).toBe(401);
+  });
+
+  test("POST / → 400 si otherUserId manquant", async () => {
+    const res = await request(app).post("/api/conversations")
+      .set("Authorization", `Bearer ${makeToken()}`)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  test("POST / → 400 si otherUserId = soi-même", async () => {
+    const res = await request(app).post("/api/conversations")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`)
+      .send({ otherUserId: 1 });
+    expect(res.status).toBe(400);
+  });
+
+  test("POST / → 200 crée une conversation avec un autre utilisateur", async () => {
+    const res = await request(app).post("/api/conversations")
+      .set("Authorization", `Bearer ${makeToken({ id: 1, role: "locataire" })}`)
+      .send({ otherUserId: 2 });
+    expect(res.status).toBe(200);
+    expect(res.body.conversation).toBeDefined();
+  });
+
+  test("GET /:id/messages → 401 sans token", async () => {
+    const res = await request(app).get("/api/conversations/1/messages");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET /:id/messages → 404 si la conversation n'appartient pas à l'utilisateur", async () => {
+    const res = await request(app).get("/api/conversations/1/messages")
+      .set("Authorization", `Bearer ${makeToken()}`);
+    expect(res.status).toBe(404);
+  });
+
+  test("POST /:id/messages → 401 sans token", async () => {
+    const res = await request(app).post("/api/conversations/1/messages").send({ contenu: "Salut" });
+    expect(res.status).toBe(401);
+  });
+
+  test("POST /:id/messages → 400 si contenu vide", async () => {
+    const res = await request(app).post("/api/conversations/1/messages")
+      .set("Authorization", `Bearer ${makeToken()}`)
+      .send({ contenu: "   " });
+    expect(res.status).toBe(400);
   });
 });

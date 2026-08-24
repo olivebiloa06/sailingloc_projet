@@ -1,49 +1,21 @@
 /**
  * Tests unitaires — Validation des données métier
  * Email, prix, champs bateau, plage de dates
+ *
+ * Importe les vraies fonctions de src/utils/validators.js (utilisées par
+ * authController et boatController) : ces tests vérifient le code réellement
+ * exécuté en production, pas une copie.
  */
 
-// ============================================================
-// Fonctions de validation (extraites des validators du projet)
-// ============================================================
-
-function isValidEmail(email) {
-  if (!email || typeof email !== "string") return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
-
-function isValidPrix(prix) {
-  const n = Number(prix);
-  return !isNaN(n) && n > 0 && n <= 100000;
-}
-
-function isValidCapacite(capacite) {
-  const n = Number(capacite);
-  return Number.isInteger(n) && n >= 1 && n <= 50;
-}
-
-function isValidLongueur(longueur) {
-  const n = Number(longueur);
-  return !isNaN(n) && n > 0 && n <= 200;
-}
-
-function isValidBoatType(type) {
-  const types = ["voilier", "catamaran", "bateau_moteur", "yacht", "semi_rigide", "autre"];
-  return types.includes(type);
-}
-
-function chevauchementDates(debut1, fin1, debut2, fin2) {
-  const s1 = new Date(debut1);
-  const e1 = new Date(fin1);
-  const s2 = new Date(debut2);
-  const e2 = new Date(fin2);
-  return s1 < e2 && s2 < e1;
-}
-
-function datesDansPlage(dateDebut, dateFin, plageDebut, plageFin) {
-  return new Date(dateDebut) >= new Date(plageDebut) &&
-         new Date(dateFin) <= new Date(plageFin);
-}
+const {
+  isValidEmail,
+  isValidPrix,
+  isValidCapacite,
+  isValidLongueur,
+  isValidBoatType,
+  chevauchementDates,
+  datesDansPlage,
+} = require("../utils/validators");
 
 // ============================================================
 // TESTS EMAIL

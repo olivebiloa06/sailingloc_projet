@@ -2,7 +2,9 @@
  * Tests unitaires — Calcul des réservations
  * CDC page 92 : couverture ≥ 70%
  *
- * Fonctions testées :
+ * Fonctions testées (importées depuis src/utils/bookingCalculations.js,
+ * utilisé par bookingController.js — ces tests vérifient le code réellement
+ * exécuté en production, pas une copie) :
  *   - calculerMontant(prixJour, dateDebut, dateFin) → sous-total
  *   - calculerCommission(sousTotal) → commission 10%
  *   - calculerTotal(sousTotal) → total locataire (sousTotal + commission)
@@ -10,42 +12,13 @@
  *   - validerPersonnes(nombre, capaciteMax) → true/false
  */
 
-// ============================================================
-// Fonctions métier (extraites de bookingController.js)
-// Isolées ici pour les tests unitaires — pas de dépendance DB.
-// ============================================================
-
-function diffJours(dateDebut, dateFin) {
-  const start = new Date(dateDebut);
-  const end = new Date(dateFin);
-  return Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-}
-
-function calculerMontant(prixJour, dateDebut, dateFin) {
-  const jours = diffJours(dateDebut, dateFin);
-  return jours * prixJour;
-}
-
-function calculerCommission(sousTotal) {
-  return Math.round(sousTotal * 0.1);
-}
-
-function calculerTotal(sousTotal) {
-  return sousTotal + calculerCommission(sousTotal);
-}
-
-function validerDates(dateDebut, dateFin) {
-  if (!dateDebut || !dateFin) return false;
-  const start = new Date(dateDebut);
-  const end = new Date(dateFin);
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return false;
-  return end > start;
-}
-
-function validerPersonnes(nombre, capaciteMax) {
-  const n = Number(nombre);
-  return Number.isInteger(n) && n >= 1 && n <= capaciteMax;
-}
+const {
+  calculerMontant,
+  calculerCommission,
+  calculerTotal,
+  validerDates,
+  validerPersonnes,
+} = require("../utils/bookingCalculations");
 
 // ============================================================
 // TESTS
