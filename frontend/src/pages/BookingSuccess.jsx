@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import api, { openFileInNewTab } from "../services/api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -50,9 +50,13 @@ export default function BookingSuccess() {
     load();
   }, [sessionId]);
 
-  const downloadContract = () => {
-    if (contract?.urlPdf?.startsWith("http")) {
-      window.open(contract.urlPdf, "_blank");
+  const downloadContract = async () => {
+    if (!contract) return;
+    const tab = window.open("", "_blank", "noopener,noreferrer");
+    try {
+      await openFileInNewTab(tab, `/contracts/${contract.id}/file`);
+    } catch {
+      tab?.close();
     }
   };
 

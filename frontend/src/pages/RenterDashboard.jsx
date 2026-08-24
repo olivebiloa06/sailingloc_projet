@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../services/api";
+import api, { openFileInNewTab } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
 import BoatMark from "../components/BoatMark";
@@ -107,15 +107,11 @@ export default function RenterDashboard() {
 
   // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
   // lien avec le geste utilisateur et les navigateurs bloquent le popup.
-  // L'endpoint renvoie une URL JSON (Cloudinary en prod, fichier local en dev),
-  // pas les octets bruts — le responseType "blob" utilisé ici ne marchait
-  // qu'en local et cassait silencieusement en production.
   const downloadContract = async (contractId) => {
     setContractError("");
     const tab = window.open("", "_blank", "noopener,noreferrer");
     try {
-      const { data } = await api.get(`/contracts/${contractId}/file`);
-      if (tab) tab.location.href = data.url;
+      await openFileInNewTab(tab, `/contracts/${contractId}/file`);
     } catch {
       tab?.close();
       setContractError("Contrat non disponible pour l'instant.");

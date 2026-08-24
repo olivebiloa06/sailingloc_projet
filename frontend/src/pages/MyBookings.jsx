@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../services/api";
+import api, { openFileInNewTab } from "../services/api";
 import { resolveImageUrl } from "../utils/assets";
 import InlineAlert from "../components/InlineAlert";
 
@@ -54,8 +54,7 @@ export default function MyBookings() {
     setContractError("");
     const tab = window.open("", "_blank", "noopener,noreferrer");
     try {
-      const { data } = await api.get(`/contracts/${contract.id}/file`);
-      if (tab) tab.location.href = data.url;
+      await openFileInNewTab(tab, `/contracts/${contract.id}/file`);
     } catch {
       tab?.close();
       setContractError("Contrat indisponible.");

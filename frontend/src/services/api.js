@@ -24,6 +24,23 @@ export function getAccessToken() {
   return accessToken;
 }
 
+// Ouvre le fichier (PDF de contrat/document) renvoyé par un endpoint de type
+// GET /.../:id/file dans un onglet déjà ouvert (voir appelants : l'onglet
+// doit être ouvert AVANT l'appel réseau pour ne pas être bloqué en popup).
+// L'endpoint répond soit par une URL JSON signée (Cloudinary, en prod), soit
+// par les octets bruts du PDF (fichier local, en dev) — on ne peut pas
+// deviner lequel à l'avance, donc on récupère toujours en blob et on
+// distingue les deux cas via le type MIME du blob.
+export async function openFileInNewTab(tab, url, params) {
+  const { data } = await api.get(url, { params, responseType: "blob" });
+  if (data.type && data.type.includes("json")) {
+    const { url: fileUrl } = JSON.parse(await data.text());
+    if (tab) tab.location.href = fileUrl;
+  } else {
+    if (tab) tab.location.href = URL.createObjectURL(data);
+  }
+}
+
 api.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;

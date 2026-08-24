@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import api from "../services/api";
+import api, { openFileInNewTab } from "../services/api";
 import InlineAlert from "../components/InlineAlert";
 
 const TYPE_LABELS = {
@@ -42,10 +42,7 @@ function DocumentCard({ doc, onAction }) {
   const viewDoc = async (download) => {
     const tab = window.open("", "_blank", "noopener,noreferrer");
     try {
-      const { data } = await api.get(`/documents/${doc.id}/file`, {
-        params: download ? { download: 1 } : undefined,
-      });
-      if (tab) tab.location.href = data.url;
+      await openFileInNewTab(tab, `/documents/${doc.id}/file`, download ? { download: 1 } : undefined);
     } catch {
       tab?.close();
       setError("Impossible de charger le document.");
