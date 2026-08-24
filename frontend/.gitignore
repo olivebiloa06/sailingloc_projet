@@ -12,11 +12,10 @@ dist
 dist-ssr
 *.local
 
-# Playwright — artefacts de run (captures, traces, rapport HTML)
-test-results
-playwright-report
-blob-report
-playwright/.cache
+# Cypress — artefacts de run (captures, vidéos)
+cypress/screenshots
+cypress/videos
+cypress/downloads
 
 # Editor directories and files
 .vscode/*

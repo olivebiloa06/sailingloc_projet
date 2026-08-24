@@ -8,8 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "cypress:open": "cypress open",
+    "test:cypress": "start-server-and-test \"npm --prefix ../backend run dev\" http://localhost:5000/api/boats \"npm run dev\" http://localhost:5173 \"cypress run\""
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
@@ -22,14 +22,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.62.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "cypress": "^15.21.0",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "start-server-and-test": "^3.0.12",
     "vite": "^8.0.12"
   }
 }
