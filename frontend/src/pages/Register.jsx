@@ -172,10 +172,10 @@ export default function Register() {
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {["prenom", "nom"].map((field) => (
+              {[{ key: "prenom", label: "Prénom" }, { key: "nom", label: "Nom" }].map(({ key: field, label }) => (
                 <div key={field}>
                   <label htmlFor={field} className="mb-1 block text-sm font-medium text-navy">
-                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                    {label}
                   </label>
                   <input id={field} name={field} value={form[field]} onChange={handleChange}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30" />

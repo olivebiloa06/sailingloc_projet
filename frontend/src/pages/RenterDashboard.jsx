@@ -116,7 +116,11 @@ export default function RenterDashboard() {
     }
   };
 
-  const handleLogout = async () => { await logout(); navigate("/", { replace: true }); };
+  // Navigue d'abord, déconnecte ensuite : sinon setUser(null) fait re-rendre
+  // ProtectedRoute (encore monté sur /mon-compte à ce moment-là) avant que ce
+  // navigate("/") ait fini de s'appliquer, et son propre <Navigate to="/login">
+  // gagne la course — l'utilisateur atterrissait sur /login au lieu de /.
+  const handleLogout = async () => { navigate("/", { replace: true }); await logout(); };
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">

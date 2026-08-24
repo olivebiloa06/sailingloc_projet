@@ -320,7 +320,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = async () => { await logout(); navigate("/", { replace: true }); };
+  // Navigue d'abord, déconnecte ensuite : sinon setUser(null) fait re-rendre
+  // ProtectedRoute (encore monté sur /admin/documents ou /mon-compte à ce
+  // moment-là) avant que ce navigate("/") ait fini de s'appliquer, et son
+  // propre <Navigate to="/login"> gagne la course.
+  const handleLogout = async () => { navigate("/", { replace: true }); await logout(); };
 
   const TABS = [
     { key: "kpi", label: "Tableau de bord" },
