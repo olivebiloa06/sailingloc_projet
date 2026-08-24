@@ -1,2 +1,5 @@
 node_modules
 .env
+
+# Journaux du test d'endurance (loadtest/soak-test.js) — générés à chaque run
+loadtest/logs

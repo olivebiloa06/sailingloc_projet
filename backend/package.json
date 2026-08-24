@@ -11,7 +11,9 @@
     "seed:images": "node src/seeders/seedImages.js",
     "make-available": "node src/seeders/makeAllBoatsAvailable.js",
     "test:watch": "jest --watch",
-    "test:ci": "jest --coverage --ci --coverageReporters=lcov --coverageReporters=text"
+    "test:ci": "jest --coverage --ci --coverageReporters=lcov --coverageReporters=text",
+    "test:load": "node loadtest/load-test.js",
+    "test:soak": "node loadtest/soak-test.js"
   },
   "keywords": [],
   "author": "",
@@ -43,6 +45,7 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
+    "autocannon": "^8.0.0",
     "jest": "^29.7.0",
     "nodemon": "^3.1.14",
     "supertest": "^6.3.4"
