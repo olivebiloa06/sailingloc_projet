@@ -294,12 +294,18 @@ export default function AdminDashboard() {
     }
   };
 
+  // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
+  // lien avec le geste utilisateur et les navigateurs bloquent le popup.
+  // L'endpoint renvoie une URL JSON (Cloudinary en prod, fichier local en dev),
+  // pas les octets bruts — le responseType "blob" utilisé ici ne marchait
+  // qu'en local et cassait silencieusement en production.
   const downloadDoc = async (id) => {
+    const tab = window.open("", "_blank", "noopener,noreferrer");
     try {
-      const res = await api.get(`/documents/${id}/file`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      window.open(url, "_blank");
+      const { data } = await api.get(`/documents/${id}/file`);
+      if (tab) tab.location.href = data.url;
     } catch {
+      tab?.close();
       alert("Fichier non disponible.");
     }
   };

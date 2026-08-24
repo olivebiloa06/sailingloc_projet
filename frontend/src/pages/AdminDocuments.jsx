@@ -34,20 +34,20 @@ function DocumentCard({ doc, onAction }) {
     }
   };
 
-    const viewDoc = async () => {
-  try {
-    const { data } = await api.get(`/documents/${doc.id}/file`);
-    const a = document.createElement("a");
-    a.href = data.url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } catch {
-    alert("Impossible de charger le document.");
-  }
-};
+  // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
+  // lien avec le geste utilisateur et les navigateurs bloquent le popup.
+  const viewDoc = async (download) => {
+    const tab = window.open("", "_blank", "noopener,noreferrer");
+    try {
+      const { data } = await api.get(`/documents/${doc.id}/file`, {
+        params: download ? { download: 1 } : undefined,
+      });
+      if (tab) tab.location.href = data.url;
+    } catch {
+      tab?.close();
+      alert("Impossible de charger le document.");
+    }
+  };
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -62,11 +62,11 @@ function DocumentCard({ doc, onAction }) {
           <p className="mt-0.5 text-xs text-gray-400">Soumis le {formatDate(doc.createdAt)}</p>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={viewDoc}
+          <button type="button" onClick={() => viewDoc(false)}
             className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy">
             👁 Voir
           </button>
-          <button type="button" onClick={viewDoc}
+          <button type="button" onClick={() => viewDoc(true)}
             className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-500">
             ⬇ Télécharger
           </button>

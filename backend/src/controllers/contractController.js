@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const cloudinary = require("cloudinary").v2;
 const { Contract, Booking, Boat, User } = require("../models");
 const { generateContractPdf, CONTRACTS_DIR } = require("../services/contractService");
 
@@ -95,9 +96,23 @@ exports.getContractFile = async (req, res) => {
     }
     if (!contract.urlPdf) return res.status(404).json({ message: "Aucun fichier pour ce contrat" });
 
-    // En production → retourne l'URL JSON (pas de redirect → évite CORS avec credentials)
+    const download = req.query.download === "1";
+
+    // En production → retourne l'URL JSON (pas de redirect → évite CORS avec credentials).
+    // Cloudinary bloque par défaut l'accès direct aux PDF livrés en resource_type "raw"
+    // (restriction de sécurité activée par défaut sur les comptes récents) : on doit donc
+    // signer l'URL pour que Cloudinary l'autorise, sinon le navigateur reçoit un 401.
     if (isProduction && contract.urlPdf.startsWith("http")) {
-      return res.status(200).json({ url: contract.urlPdf });
+      const publicId = contract.urlPdf.split("/").slice(-1)[0].split(".")[0];
+      const signedUrl = cloudinary.url(`sailingloc/contracts/${publicId}`, {
+        resource_type: "raw",
+        type: "upload",
+        format: "pdf",
+        sign_url: true,
+        secure: true,
+        flags: download ? "attachment" : undefined,
+      });
+      return res.status(200).json({ url: signedUrl });
     }
 
     // En local → sert le fichier
@@ -106,7 +121,7 @@ exports.getContractFile = async (req, res) => {
       return res.status(404).json({ message: "Fichier introuvable" });
     }
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="contrat-${contract.id}.pdf"`);
+    res.setHeader("Content-Disposition", `${download ? "attachment" : "inline"}; filename="contrat-${contract.id}.pdf"`);
     return res.sendFile(filePath);
   } catch (error) {
     return res.status(500).json({ message: error.message });

@@ -106,9 +106,25 @@ exports.getDocumentFile = async (req, res) => {
     }
     if (!document.url) return res.status(404).json({ message: "Fichier introuvable" });
 
-    // En production → retourne l'URL JSON (pas de redirect → évite CORS avec credentials)
+    const download = req.query.download === "1";
+
+    // En production → retourne l'URL JSON (pas de redirect → évite CORS avec credentials).
+    // Cloudinary bloque par défaut l'accès direct aux PDF/ZIP livrés en resource_type "raw"
+    // (restriction de sécurité activée par défaut sur les comptes récents) : on doit donc
+    // signer l'URL pour que Cloudinary l'autorise, sinon le navigateur reçoit un 401.
     if (isProduction && document.url.startsWith("http")) {
-      return res.status(200).json({ url: document.url });
+      const lastSegment = document.url.split("/").slice(-1)[0];
+      const publicId = lastSegment.split(".")[0];
+      const ext = path.extname(lastSegment).slice(1);
+      const signedUrl = cloudinary.url(`sailingloc/documents/${publicId}`, {
+        resource_type: "raw",
+        type: "upload",
+        format: ext || undefined,
+        sign_url: true,
+        secure: true,
+        flags: download ? "attachment" : undefined,
+      });
+      return res.status(200).json({ url: signedUrl });
     }
 
     // En local → sert le fichier
@@ -119,7 +135,7 @@ exports.getDocumentFile = async (req, res) => {
     const ext = path.extname(document.url).toLowerCase();
     const mimeTypes = { ".pdf": "application/pdf", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png" };
     res.setHeader("Content-Type", mimeTypes[ext] || "application/octet-stream");
-    res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(document.nom)}${ext}"`);
+    res.setHeader("Content-Disposition", `${download ? "attachment" : "inline"}; filename="${encodeURIComponent(document.nom)}${ext}"`);
     return res.sendFile(filePath);
   } catch (error) {
     return res.status(500).json({ message: error.message });

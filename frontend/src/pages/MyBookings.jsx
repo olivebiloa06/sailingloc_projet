@@ -46,22 +46,18 @@ export default function MyBookings() {
     return () => { isMounted = false; };
   }, []);
 
-  // Ouvre directement l'URL Cloudinary si disponible — évite le problème
-  // d'auth sur le redirect backend
-      const downloadContract = async (contract) => {
-  try {
-    const { data } = await api.get(`/contracts/${contract.id}/file`);
-    const a = document.createElement("a");
-    a.href = data.url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } catch {
-    alert("Contrat indisponible.");
-  }
-};
+  // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
+  // lien avec le geste utilisateur et les navigateurs bloquent le popup.
+  const downloadContract = async (contract) => {
+    const tab = window.open("", "_blank", "noopener,noreferrer");
+    try {
+      const { data } = await api.get(`/contracts/${contract.id}/file`);
+      if (tab) tab.location.href = data.url;
+    } catch {
+      tab?.close();
+      alert("Contrat indisponible.");
+    }
+  };
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">

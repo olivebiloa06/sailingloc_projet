@@ -100,12 +100,18 @@ export default function RenterDashboard() {
 
   useEffect(() => { load(); }, []);
 
+  // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
+  // lien avec le geste utilisateur et les navigateurs bloquent le popup.
+  // L'endpoint renvoie une URL JSON (Cloudinary en prod, fichier local en dev),
+  // pas les octets bruts — le responseType "blob" utilisé ici ne marchait
+  // qu'en local et cassait silencieusement en production.
   const downloadContract = async (contractId) => {
+    const tab = window.open("", "_blank", "noopener,noreferrer");
     try {
-      const res = await api.get(`/contracts/${contractId}/file`, { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
-      window.open(url, "_blank");
+      const { data } = await api.get(`/contracts/${contractId}/file`);
+      if (tab) tab.location.href = data.url;
     } catch {
+      tab?.close();
       alert("Contrat non disponible pour l'instant.");
     }
   };
