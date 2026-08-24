@@ -452,10 +452,33 @@ exports.capturePaypalOrder = async (req, res) => {
       booking.statut = "confirmee";
       await booking.save();
 
+      let contract = null;
       try {
-        await contractController.generateContractForBooking(bookingId);
+        contract = await contractController.generateContractForBooking(bookingId);
       } catch (contractError) {
         console.error("Génération du contrat échouée pour la réservation", bookingId, contractError);
+      }
+
+      // Emails de confirmation — jusqu'ici envoyés uniquement pour un paiement
+      // Stripe (webhook + fallback confirmStripeSession), jamais pour PayPal.
+      const bookingFull = await Booking.findByPk(bookingId, {
+        include: [
+          { model: Boat, include: [{ model: User }] },
+          { model: User },
+        ],
+      });
+
+      if (bookingFull?.User?.email) {
+        try {
+          await sendPaymentConfirmation(bookingFull.User.email, { montant: bookingFull.montantTotal }, bookingFull, contract);
+        } catch (e) { console.error("Email locataire:", e.message); }
+      }
+
+      const ownerEmail = bookingFull?.Boat?.User?.email;
+      if (ownerEmail) {
+        try {
+          await sendOwnerBookingNotification(ownerEmail, bookingFull);
+        } catch (e) { console.error("Email propriétaire:", e.message); }
       }
     }
 
