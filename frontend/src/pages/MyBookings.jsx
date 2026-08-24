@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { resolveImageUrl } from "../utils/assets";
+import InlineAlert from "../components/InlineAlert";
 
 const STATUS_STYLES = {
   en_attente: { label: "En attente de réponse du propriétaire", className: "bg-amber-50 text-amber-700" },
@@ -31,6 +32,7 @@ export default function MyBookings() {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [contractError, setContractError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -49,13 +51,14 @@ export default function MyBookings() {
   // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
   // lien avec le geste utilisateur et les navigateurs bloquent le popup.
   const downloadContract = async (contract) => {
+    setContractError("");
     const tab = window.open("", "_blank", "noopener,noreferrer");
     try {
       const { data } = await api.get(`/contracts/${contract.id}/file`);
       if (tab) tab.location.href = data.url;
     } catch {
       tab?.close();
-      alert("Contrat indisponible.");
+      setContractError("Contrat indisponible.");
     }
   };
 
@@ -64,7 +67,8 @@ export default function MyBookings() {
       <h1 className="font-heading text-2xl font-semibold text-navy">Mes réservations</h1>
 
       {loading && <p className="mt-6 text-sm text-gray-500">Chargement...</p>}
-      {error && <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+      <InlineAlert message={error} className="mt-6" />
+      <InlineAlert message={contractError} onDismiss={() => setContractError("")} className="mt-6" />
 
       {!loading && !error && bookings.length === 0 && (
         <p className="mt-6 text-sm text-gray-500">

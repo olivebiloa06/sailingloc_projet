@@ -121,7 +121,7 @@ export default function BookingSuccess() {
           <button
             type="button"
             onClick={downloadContract}
-            className="w-full rounded-xl bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-navy-light"
+            className="w-full rounded-lg bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-navy-light"
           >
             📄 Télécharger le contrat PDF
           </button>
@@ -132,7 +132,7 @@ export default function BookingSuccess() {
           <button
             type="button"
             onClick={leaveReview}
-            className="w-full rounded-xl border border-sky px-6 py-3 text-sm font-semibold text-sky transition hover:bg-sky/5"
+            className="w-full rounded-lg border border-sky px-6 py-3 text-sm font-semibold text-sky transition hover:bg-sky/5"
           >
             ⭐ Laisser un avis sur ce bateau
           </button>
@@ -141,7 +141,7 @@ export default function BookingSuccess() {
         {/* Mes réservations */}
         <Link
           to="/mes-reservations"
-          className="w-full rounded-xl border border-gray-300 px-6 py-3 text-center text-sm font-medium text-gray-600 transition hover:border-navy hover:text-navy"
+          className="w-full rounded-lg border border-gray-300 px-6 py-3 text-center text-sm font-medium text-gray-600 transition hover:border-navy hover:text-navy"
         >
           Voir mes réservations
         </Link>
@@ -149,7 +149,7 @@ export default function BookingSuccess() {
         {/* Retour accueil */}
         <Link
           to="/"
-          className="w-full rounded-xl border border-gray-200 px-6 py-3 text-center text-sm font-medium text-gray-400 transition hover:text-gray-600"
+          className="w-full rounded-lg border border-gray-200 px-6 py-3 text-center text-sm font-medium text-gray-400 transition hover:text-gray-600"
         >
           Retour à l'accueil
         </Link>

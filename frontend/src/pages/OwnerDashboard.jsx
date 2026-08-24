@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
-import { resolveImageUrl } from "../utils/assets";
-import BoatMark from "../components/BoatMark";
+import InlineAlert from "../components/InlineAlert";
 
 const DOC_TYPES = [
   { value: "piece_identite", label: "Pièce d'identité" },
@@ -28,6 +27,7 @@ export default function OwnerDashboard() {
   const [bookings, setBookings] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [respondError, setRespondError] = useState("");
 
   // Upload doc état
   const [docForm, setDocForm] = useState({ nom: "", type: "piece_identite" });
@@ -58,12 +58,13 @@ export default function OwnerDashboard() {
   const totalCommission = confirmedBookings.reduce((sum, b) => sum + b.commission, 0);
 
   const respond = async (id, action) => {
+    setRespondError("");
     try {
       await api.put(`/bookings/${id}/repondre`, { action });
       const r = await api.get("/bookings/owner/demandes");
       setBookings(r.data.bookings || []);
     } catch (err) {
-      alert(err.response?.data?.message || "Erreur.");
+      setRespondError(err.response?.data?.message || "Erreur.");
     }
   };
 
@@ -96,6 +97,19 @@ export default function OwnerDashboard() {
 
   const pending = bookings.filter((b) => b.statut === "en_attente");
 
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-4xl px-6 py-12 space-y-10">
+        <div className="h-8 w-64 animate-pulse rounded bg-gray-100" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-6 py-12 space-y-10">
       {/* Header */}
@@ -112,7 +126,7 @@ export default function OwnerDashboard() {
       </div>
 
       {/* KPIs revenus */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
           <p className="text-2xl font-semibold text-navy">{confirmedBookings.length}</p>
           <p className="mt-1 text-xs text-gray-500">Locations confirmées</p>
@@ -122,7 +136,7 @@ export default function OwnerDashboard() {
           <p className="mt-1 text-xs text-gray-500">Revenus nets</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-          <p className="text-2xl font-semibold text-gray-400">{totalCommission.toFixed(0)} €</p>
+          <p className="text-2xl font-semibold text-gray-700">{totalCommission.toFixed(0)} €</p>
           <p className="mt-1 text-xs text-gray-500">Commission SailingLoc (10%)</p>
         </div>
       </div>
@@ -154,6 +168,7 @@ export default function OwnerDashboard() {
           <h2 className="font-heading text-lg font-semibold text-navy">
             Demandes en attente ({pending.length})
           </h2>
+          <InlineAlert message={respondError} onDismiss={() => setRespondError("")} className="mt-3" />
           <div className="mt-4 space-y-3">
             {pending.map((b) => (
               <div key={b.id} className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -169,7 +184,7 @@ export default function OwnerDashboard() {
                   <button onClick={() => respond(b.id, "accepter")} className="rounded-lg bg-navy px-4 py-1.5 text-xs font-semibold text-white hover:bg-navy-light">
                     Accepter
                   </button>
-                  <button onClick={() => respond(b.id, "refuser")} className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-400">
+                  <button onClick={() => respond(b.id, "refuser")} className="rounded-lg border border-gray-300 px-4 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-navy hover:text-navy">
                     Refuser
                   </button>
                 </div>

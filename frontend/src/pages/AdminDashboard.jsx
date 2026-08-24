@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import InlineAlert from "../components/InlineAlert";
 
 const CATEGORIES = [
   "Actualités nautiques",
@@ -164,7 +165,7 @@ function ArticlesPanel({ articles, onRefresh }) {
               {saving ? "Enregistrement..." : "Enregistrer"}
             </button>
             <button type="button" onClick={() => setShowForm(false)}
-              className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600">
+              className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600 transition hover:border-navy hover:text-navy">
               Annuler
             </button>
           </div>
@@ -247,6 +248,7 @@ export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
   const [tab, setTab] = useState("kpi");
   const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState("");
 
   const load = useCallback(() => {
     setLoading(true);
@@ -286,11 +288,12 @@ export default function AdminDashboard() {
   useEffect(() => { load(); }, [load]);
 
   const validateDoc = async (id, statut) => {
+    setActionError("");
     try {
       await api.patch(`/documents/${id}/validate`, { statutValidation: statut });
       load();
     } catch (err) {
-      alert(err.response?.data?.message || "Erreur.");
+      setActionError(err.response?.data?.message || "Erreur.");
     }
   };
 
@@ -306,17 +309,18 @@ export default function AdminDashboard() {
       if (tab) tab.location.href = data.url;
     } catch {
       tab?.close();
-      alert("Fichier non disponible.");
+      setActionError("Fichier non disponible.");
     }
   };
 
   const changeRole = async (userId, newRole) => {
     if (!window.confirm(`Changer le rôle de cet utilisateur en "${newRole}" ?`)) return;
+    setActionError("");
     try {
       await api.patch(`/admin/users/${userId}/role`, { role: newRole });
       load();
     } catch (err) {
-      alert(err.response?.data?.message || "Erreur lors du changement de rôle.");
+      setActionError(err.response?.data?.message || "Erreur lors du changement de rôle.");
     }
   };
 
@@ -365,6 +369,8 @@ export default function AdminDashboard() {
           </button>
         ))}
       </div>
+
+      <InlineAlert message={actionError} onDismiss={() => setActionError("")} className="mt-6" />
 
       {loading && <p className="mt-8 text-sm text-gray-500">Chargement...</p>}
 

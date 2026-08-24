@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
 import BoatMark from "../components/BoatMark";
+import InlineAlert from "../components/InlineAlert";
 
 const TYPE_LABELS = {
   voilier: "Voilier",
@@ -45,11 +46,12 @@ export default function OwnerBoats() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Supprimer ce bateau ? Cette action est définitive.")) return;
+    setError("");
     try {
       await api.delete(`/boats/${id}`);
       loadBoats();
     } catch (err) {
-      alert(err.response?.data?.message || "Suppression impossible.");
+      setError(err.response?.data?.message || "Suppression impossible.");
     }
   };
 
@@ -83,11 +85,7 @@ export default function OwnerBoats() {
       )}
 
       {loading && <p className="mt-6 text-sm text-gray-500">Chargement...</p>}
-      {error && (
-        <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      <InlineAlert message={error} onDismiss={() => setError("")} className="mt-6" />
 
       {!loading && !error && boats.length === 0 && (
         <p className="mt-6 text-sm text-gray-500">

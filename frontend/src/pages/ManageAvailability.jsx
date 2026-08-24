@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../services/api";
+import InlineAlert from "../components/InlineAlert";
 
 const STATUS_LABELS = {
   disponible: "Disponible",
@@ -70,11 +71,12 @@ export default function ManageAvailability() {
 
   const handleDelete = async (availabilityId) => {
     if (!window.confirm("Supprimer cette période ?")) return;
+    setError("");
     try {
       await api.delete(`/availabilities/${availabilityId}`);
       load();
     } catch (err) {
-      alert(err.response?.data?.message || "Suppression impossible.");
+      setError(err.response?.data?.message || "Suppression impossible.");
     }
   };
 
@@ -88,15 +90,11 @@ export default function ManageAvailability() {
       </h1>
 
       {loading && <p className="mt-6 text-sm text-gray-500">Chargement...</p>}
-      {error && (
-        <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      <InlineAlert message={error} onDismiss={() => setError("")} className="mt-4" />
 
       <form
         onSubmit={handleSubmit}
-        className="mt-6 grid grid-cols-3 gap-3 rounded-xl border border-gray-200 bg-white p-4"
+        className="mt-6 grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-3"
       >
         <div>
           <label className="mb-1 block text-xs font-medium text-navy">Du</label>
@@ -145,7 +143,7 @@ export default function ManageAvailability() {
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-600"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:border-navy hover:text-navy"
             >
               Annuler
             </button>

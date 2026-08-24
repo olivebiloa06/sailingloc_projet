@@ -45,7 +45,7 @@ function ArticleModal({ article, gradient, onClose }) {
               Voir les bateaux →
             </Link>
             <button type="button" onClick={onClose}
-              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-600 hover:border-gray-400">
+              className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:border-navy hover:text-navy">
               Fermer
             </button>
           </div>

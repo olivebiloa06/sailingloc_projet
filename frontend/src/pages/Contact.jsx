@@ -131,7 +131,7 @@ export default function Contact() {
                 className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none" />
             </div>
             <button type="submit" disabled={sending}
-              className="w-full rounded-xl bg-navy py-3 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-60">
+              className="w-full rounded-lg bg-navy py-3 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-60">
               {sending ? "Envoi en cours..." : "Envoyer le message"}
             </button>
           </form>

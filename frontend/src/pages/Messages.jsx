@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { io } from "socket.io-client";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import InlineAlert from "../components/InlineAlert";
 
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:5000";
 
@@ -31,12 +32,16 @@ export default function Messages() {
   const [searchParams] = useSearchParams();
 
   const [conversations, setConversations] = useState([]);
+  const [convLoading, setConvLoading] = useState(true);
+  const [convError, setConvError] = useState("");
   const [activeConv, setActiveConv] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagesError, setMessagesError] = useState("");
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
   const [typing, setTyping] = useState(null);
-  const [unread, setUnread] = useState({});
 
   const socketRef = useRef(null);
   const bottomRef = useRef(null);
@@ -51,10 +56,15 @@ export default function Messages() {
 
   // Charger la liste des conversations
   const loadConversations = useCallback(async () => {
+    setConvError("");
     try {
       const { data } = await api.get("/conversations");
       setConversations(data.conversations || []);
-    } catch {}
+    } catch {
+      setConvError("Impossible de charger tes conversations.");
+    } finally {
+      setConvLoading(false);
+    }
   }, []);
 
   useEffect(() => { loadConversations(); }, [loadConversations]);
@@ -79,12 +89,15 @@ export default function Messages() {
   useEffect(() => {
     if (!activeConv) return;
 
+    setMessagesLoading(true);
+    setMessagesError("");
     api.get(`/conversations/${activeConv.id}/messages`)
       .then(({ data }) => {
         setMessages(data.messages || []);
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
       })
-      .catch(() => {});
+      .catch(() => setMessagesError("Impossible de charger les messages de cette conversation."))
+      .finally(() => setMessagesLoading(false));
 
     socketRef.current?.emit("join_conversation", activeConv.id);
     socketRef.current?.on("new_message", (msg) => {
@@ -116,14 +129,16 @@ export default function Messages() {
     if (!draft.trim() || !activeConv) return;
 
     setSending(true);
+    setSendError("");
     socketRef.current?.emit("stop_typing", { conversationId: activeConv.id });
 
     try {
       await api.post(`/conversations/${activeConv.id}/messages`, { contenu: draft.trim() });
       setDraft("");
       loadConversations();
-    } catch {}
-    finally { setSending(false); }
+    } catch {
+      setSendError("Le message n'a pas pu être envoyé. Réessaie.");
+    } finally { setSending(false); }
   };
 
   const handleTyping = (e) => {
@@ -146,7 +161,23 @@ export default function Messages() {
           <h1 className="font-heading text-lg font-semibold text-navy">Messages</h1>
         </div>
 
-        {conversations.length === 0 ? (
+        {convLoading ? (
+          <div className="flex-1 space-y-3 p-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-gray-100" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-2/3 animate-pulse rounded bg-gray-100" />
+                  <div className="h-2.5 w-1/2 animate-pulse rounded bg-gray-100" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : convError ? (
+          <div className="p-4">
+            <InlineAlert message={convError} onDismiss={() => setConvError("")} />
+          </div>
+        ) : conversations.length === 0 ? (
           <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-gray-400">
             Aucune conversation.<br />Commence à discuter depuis une fiche bateau.
           </div>
@@ -215,8 +246,20 @@ export default function Messages() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-5 py-4">
+            {messagesLoading && (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className={`flex ${i % 2 ? "justify-end" : "justify-start"}`}>
+                    <div className="h-9 w-40 animate-pulse rounded-2xl bg-gray-100" />
+                  </div>
+                ))}
+              </div>
+            )}
+            {messagesError && (
+              <InlineAlert message={messagesError} onDismiss={() => setMessagesError("")} />
+            )}
             <div className="space-y-3">
-              {messages.map((msg, i) => {
+              {!messagesLoading && messages.map((msg, i) => {
                 const isMine = msg.senderId === user?.id;
                 const showDate = i === 0 || formatDate(messages[i - 1].createdAt) !== formatDate(msg.createdAt);
 
@@ -253,7 +296,12 @@ export default function Messages() {
           </div>
 
           {/* Saisie */}
-          <form onSubmit={handleSend} className="flex items-center gap-3 border-t border-gray-100 px-5 py-4">
+          {sendError && (
+            <div className="border-t border-gray-100 px-5 pt-3">
+              <InlineAlert message={sendError} onDismiss={() => setSendError("")} />
+            </div>
+          )}
+          <form onSubmit={handleSend} className={`flex items-center gap-3 px-5 py-4 ${sendError ? "" : "border-t border-gray-100"}`}>
             <input
               ref={inputRef}
               type="text"
@@ -266,6 +314,7 @@ export default function Messages() {
             <button
               type="submit"
               disabled={!draft.trim() || sending}
+              aria-label="Envoyer le message"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy text-white transition hover:bg-navy-light disabled:opacity-40"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">

@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
 import BoatMark from "../components/BoatMark";
+import InlineAlert from "../components/InlineAlert";
 
 const STATUS_STYLES = {
   en_attente: { label: "En attente", className: "bg-amber-50 text-amber-700" },
@@ -26,14 +27,16 @@ function ReviewModal({ booking, onClose, onSubmit }) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const submit = async () => {
     setSaving(true);
+    setError("");
     try {
       await api.post("/reviews", { bookingId: booking.id, note: rating, commentaire: comment });
       onSubmit();
     } catch (err) {
-      alert(err.response?.data?.message || "Erreur lors de l'envoi de l'avis.");
+      setError(err.response?.data?.message || "Erreur lors de l'envoi de l'avis.");
     } finally {
       setSaving(false);
     }
@@ -61,6 +64,7 @@ function ReviewModal({ booking, onClose, onSubmit }) {
           onChange={(e) => setComment(e.target.value)}
           className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none"
         />
+        <InlineAlert message={error} onDismiss={() => setError("")} className="mt-3" />
         <div className="mt-4 flex gap-2">
           <button
             type="button"
@@ -70,7 +74,7 @@ function ReviewModal({ booking, onClose, onSubmit }) {
           >
             {saving ? "Envoi..." : "Publier l'avis"}
           </button>
-          <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600">
+          <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:border-navy hover:text-navy">
             Annuler
           </button>
         </div>
@@ -86,6 +90,7 @@ export default function RenterDashboard() {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reviewBooking, setReviewBooking] = useState(null);
+  const [contractError, setContractError] = useState("");
 
   const load = () => {
     setLoading(true);
@@ -106,13 +111,14 @@ export default function RenterDashboard() {
   // pas les octets bruts — le responseType "blob" utilisé ici ne marchait
   // qu'en local et cassait silencieusement en production.
   const downloadContract = async (contractId) => {
+    setContractError("");
     const tab = window.open("", "_blank", "noopener,noreferrer");
     try {
       const { data } = await api.get(`/contracts/${contractId}/file`);
       if (tab) tab.location.href = data.url;
     } catch {
       tab?.close();
-      alert("Contrat non disponible pour l'instant.");
+      setContractError("Contrat non disponible pour l'instant.");
     }
   };
 
@@ -143,6 +149,8 @@ export default function RenterDashboard() {
           Se déconnecter
         </button>
       </div>
+
+      <InlineAlert message={contractError} onDismiss={() => setContractError("")} className="mt-6" />
 
       <div className="mt-8">
         <h2 className="font-heading text-lg font-semibold text-navy">Mes réservations</h2>

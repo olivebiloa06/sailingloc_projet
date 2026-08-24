@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../services/api";
+import InlineAlert from "../components/InlineAlert";
 
 const TYPE_LABELS = {
   piece_identite: "Pièce d'identité",
@@ -18,9 +19,11 @@ function formatDate(value) {
 function DocumentCard({ doc, onAction }) {
   const [comment, setComment] = useState("");
   const [acting, setActing] = useState(false);
+  const [error, setError] = useState("");
 
   const act = async (statut) => {
     setActing(true);
+    setError("");
     try {
       await api.patch(`/documents/${doc.id}/validate`, {
         statutValidation: statut,
@@ -28,7 +31,7 @@ function DocumentCard({ doc, onAction }) {
       });
       onAction();
     } catch (err) {
-      alert(err.response?.data?.message || "Erreur.");
+      setError(err.response?.data?.message || "Erreur.");
     } finally {
       setActing(false);
     }
@@ -45,7 +48,7 @@ function DocumentCard({ doc, onAction }) {
       if (tab) tab.location.href = data.url;
     } catch {
       tab?.close();
-      alert("Impossible de charger le document.");
+      setError("Impossible de charger le document.");
     }
   };
 
@@ -72,6 +75,8 @@ function DocumentCard({ doc, onAction }) {
           </button>
         </div>
       </div>
+
+      <InlineAlert message={error} onDismiss={() => setError("")} className="mt-3" />
 
       <textarea rows={2} placeholder="Commentaire (optionnel, visible par l'utilisateur)"
         value={comment} onChange={(e) => setComment(e.target.value)}

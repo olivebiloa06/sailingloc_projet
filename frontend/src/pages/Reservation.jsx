@@ -140,7 +140,7 @@ export default function Reservation() {
             type="button"
             onClick={handleStripe}
             disabled={payingStripe || payingPaypal}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy py-3 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-navy py-3 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-50"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white">
               <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
@@ -152,7 +152,7 @@ export default function Reservation() {
             type="button"
             onClick={handlePaypal}
             disabled={payingStripe || payingPaypal}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[#0070ba] bg-[#0070ba] py-3 text-sm font-semibold text-white transition hover:bg-[#005ea6] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#0070ba] bg-[#0070ba] py-3 text-sm font-semibold text-white transition hover:bg-[#005ea6] disabled:opacity-50"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5 fill-white" xmlns="http://www.w3.org/2000/svg">
               <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c1.379 3.087.417 6.93-3.034 8.826l-.037.023c-.54.31-.82.964-.695 1.578l.752 3.822c.08.406.44.695.854.695h3.12c.524 0 .968-.382 1.05-.9l1.326-8.373c.213-1.338-.15-2.794-2.729-5.13z" />

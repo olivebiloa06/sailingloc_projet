@@ -185,7 +185,7 @@ export default function OwnerRequests() {
                     type="button"
                     disabled={respondingId === booking.id}
                     onClick={() => respond(booking.id, "refuser")}
-                    className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:border-gray-400 disabled:opacity-50"
+                    className="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:border-navy hover:text-navy disabled:opacity-50"
                   >
                     Refuser
                   </button>

@@ -241,7 +241,7 @@ export default function Home() {
       </section>
 
       {/* TOP DESTINATIONS */}
-      <section className="bg-gray-50 py-20 sm:py-24">
+      <section className="bg-cloud py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-6">
           <Reveal>
             <Kicker tone="text-sable">Où larguer les amarres</Kicker>
@@ -268,14 +268,14 @@ export default function Home() {
       </section>
 
       {/* COMMENT ÇA MARCHE */}
-      <section id="comment-ca-marche" className="bg-gray-50 py-20 sm:py-28">
+      <section id="comment-ca-marche" className="bg-cloud py-20 sm:py-28">
         <div className="mx-auto max-w-5xl px-6">
           <Reveal>
             <h2 className="text-center font-heading text-2xl font-semibold tracking-tight text-navy sm:text-3xl">Comment ça marche</h2>
           </Reveal>
           <div className="relative mt-12 grid gap-8 sm:grid-cols-2">
             <svg className="pointer-events-none absolute left-1/4 top-9 hidden h-px w-1/2 sm:block" viewBox="0 0 200 2" preserveAspectRatio="none" aria-hidden="true">
-              <line x1="0" y1="1" x2="200" y2="1" stroke="#C9A96E" strokeWidth="2" />
+              <line x1="0" y1="1" x2="200" y2="1" stroke="var(--color-sable)" strokeWidth="2" />
             </svg>
             <Reveal>
               <Link to="/boats" className="group relative block h-full rounded-2xl bg-white p-7 shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
