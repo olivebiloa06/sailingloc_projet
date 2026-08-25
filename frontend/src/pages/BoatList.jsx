@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import api from "../services/api";
 import { resolveImageUrl } from "../utils/assets";
 import BoatMark from "../components/BoatMark";
 import FavoriteButton from "../components/FavoriteButton";
+import BoatMap from "../components/BoatMap";
+import WeatherPanel from "../components/WeatherPanel";
 import { usePageMeta } from "../hooks/usePageMeta";
 
 // Images de fallback pour les bateaux sans photo uploadée
@@ -126,6 +128,9 @@ export default function BoatList() {
   const [boats, setBoats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [view, setView] = useState("grille");
+  const [sortBy, setSortBy] = useState("pertinence");
+  const [selectedZone, setSelectedZone] = useState(null);
 
   const fetchBoats = useCallback(async (activeFilters) => {
     setLoading(true);
@@ -180,6 +185,23 @@ export default function BoatList() {
   };
 
   const resultCount = boats.length;
+
+  const sortedBoats = useMemo(() => {
+    if (sortBy === "prix_asc") return [...boats].sort((a, b) => a.prixJour - b.prixJour);
+    if (sortBy === "prix_desc") return [...boats].sort((a, b) => b.prixJour - a.prixJour);
+    return boats;
+  }, [boats, sortBy]);
+
+  // Zone affichée dans le panneau météo : celle cliquée sur la carte, sinon
+  // celle du premier bateau géolocalisé du lot courant.
+  useEffect(() => {
+    const firstLocated = boats.find((b) => b.latitude != null && b.longitude != null);
+    setSelectedZone(
+      firstLocated
+        ? { latitude: firstLocated.latitude, longitude: firstLocated.longitude, name: firstLocated.localisation }
+        : null
+    );
+  }, [boats]);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -298,6 +320,44 @@ export default function BoatList() {
 
         {/* RÉSULTATS — colonne droite */}
         <div>
+          {!error && !loading && resultCount > 0 && (
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex gap-2 rounded-full border border-gray-200 bg-white p-1">
+                <button
+                  type="button"
+                  onClick={() => setView("carte")}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                    view === "carte" ? "bg-navy text-white" : "text-gray-500 hover:text-navy"
+                  }`}
+                >
+                  🗺️ Carte
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView("grille")}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                    view === "grille" ? "bg-navy text-white" : "text-gray-500 hover:text-navy"
+                  }`}
+                >
+                  ▦ Grille
+                </button>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-gray-500">
+                Trier par :
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm font-semibold text-navy focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
+                >
+                  <option value="pertinence">Pertinence</option>
+                  <option value="prix_asc">Prix croissant</option>
+                  <option value="prix_desc">Prix décroissant</option>
+                </select>
+              </label>
+            </div>
+          )}
+
           {error && (
             <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
@@ -326,11 +386,25 @@ export default function BoatList() {
             </div>
           )}
 
-          {!error && !loading && resultCount > 0 && (
+          {!error && !loading && resultCount > 0 && view === "grille" && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {boats.map((boat, i) => (
+              {sortedBoats.map((boat, i) => (
                 <BoatCard key={boat.id} boat={boat} index={i} />
               ))}
+            </div>
+          )}
+
+          {!error && !loading && resultCount > 0 && view === "carte" && (
+            <div className="grid h-[32rem] gap-4 lg:grid-cols-[2fr_1fr]">
+              <BoatMap
+                boats={sortedBoats}
+                onCenterChange={setSelectedZone}
+              />
+              <WeatherPanel
+                latitude={selectedZone?.latitude}
+                longitude={selectedZone?.longitude}
+                locationName={selectedZone?.name}
+              />
             </div>
           )}
         </div>

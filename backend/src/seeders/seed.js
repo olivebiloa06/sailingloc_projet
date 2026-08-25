@@ -20,6 +20,21 @@ const { sequelize, User, Boat, Availability } = require("../models");
 
 const DEMO_PASSWORD = "Demo12345";
 
+// Coordonnées connues des destinations de démo — évite de dépendre du réseau
+// (géocodage) au moment du seed, tout en donnant tout de suite des données
+// exploitables sur la carte.
+const LOCATION_COORDS = {
+  "La Rochelle": { latitude: 46.1591, longitude: -1.1520 },
+  "Golfe du Morbihan": { latitude: 47.5833, longitude: -2.75 },
+  "Côte d'Azur": { latitude: 43.2965, longitude: 6.6764 },
+  "Marseille": { latitude: 43.2965, longitude: 5.3698 },
+  "Corse": { latitude: 42.0396, longitude: 9.0129 },
+  "Bassin d'Arcachon": { latitude: 44.6667, longitude: -1.1667 },
+  "Îles Baléares": { latitude: 39.5696, longitude: 2.6502 },
+  "Côte amalfitaine": { latitude: 40.6333, longitude: 14.6029 },
+  "Croatie": { latitude: 43.5081, longitude: 16.4402 },
+};
+
 const OWNERS = [
   { nom: "Martin", prenom: "Sophie", email: "sophie.martin@demo.sailingloc.com" },
   { nom: "Dubois", prenom: "Thomas", email: "thomas.dubois@demo.sailingloc.com" },
@@ -98,6 +113,7 @@ async function seed() {
         avecSkipper: boat.avecSkipper,
         statut: "publie",
         userId: owner.id,
+        ...LOCATION_COORDS[boat.localisation],
       },
     });
     if (created) createdCount += 1;

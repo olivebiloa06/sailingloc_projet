@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const { Boat, User, Availability, Document, Review, sequelize } = require("../models");
 const { isValidPrix, isValidCapacite, isValidLongueur, isValidBoatType } = require("../utils/validators");
+const { geocodeLocation } = require("../utils/geocode");
 
 // Valide les champs numériques/enum d'un bateau — utilisé à la création ET
 // à la modification. Chaque champ n'est vérifié que s'il est fourni (à la
@@ -86,6 +87,13 @@ exports.createBoat = async (req, res) => {
       return res.status(400).json({ message: validationError });
     }
 
+    // Coordonnées GPS non fournies par le propriétaire : on les déduit de la
+    // localisation texte pour pouvoir afficher le bateau sur la carte.
+    let coords = { latitude, longitude };
+    if (latitude == null && longitude == null) {
+      coords = (await geocodeLocation(localisation)) || { latitude: null, longitude: null };
+    }
+
     const boat = await Boat.create({
       nom,
       type,
@@ -96,8 +104,8 @@ exports.createBoat = async (req, res) => {
       longueur,
       avecSkipper,
       imageUrl,
-      latitude,
-      longitude,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
       statut: "publie",
       userId: req.user.id,
     });
@@ -306,6 +314,16 @@ exports.updateBoat = async (req, res) => {
     const validationError = validateBoatFields(payload);
     if (validationError) {
       return res.status(400).json({ message: validationError });
+    }
+
+    // Localisation modifiée sans coordonnées explicites : on regéocode pour
+    // que le marqueur sur la carte suive la nouvelle destination.
+    if (payload.localisation && payload.latitude == null && payload.longitude == null) {
+      const coords = await geocodeLocation(payload.localisation);
+      if (coords) {
+        payload.latitude = coords.latitude;
+        payload.longitude = coords.longitude;
+      }
     }
 
     await boat.update(payload);
