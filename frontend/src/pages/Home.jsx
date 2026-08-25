@@ -300,31 +300,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* APP MOBILE — phase 2 du projet, à venir */}
-      <section className="overflow-hidden bg-navy py-20 sm:py-24">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1fr_auto]">
-          <Reveal>
-            <Kicker tone="text-sable">Phase 2 du projet</Kicker>
-            <h2 className="mt-3 font-heading text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              L'app mobile SailingLoc arrive bientôt
-            </h2>
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
-              Cherche un bateau, échange avec les propriétaires et gère tes réservations
-              depuis ton téléphone, où que tu sois. La prochaine étape du projet SailingLoc :
-              une application native, disponible sur iOS et Android.
-            </p>
-            <StoreBadges className="mt-7" />
-            <p className="mt-3 text-xs text-white/40">
-              En développement — l'application n'est pas encore disponible au téléchargement.
-            </p>
-          </Reveal>
-
-          <Reveal delay={150}>
-            <PhoneMockup src={appPreviewHome} alt="Aperçu de l'application mobile SailingLoc" />
-          </Reveal>
-        </div>
-      </section>
-
       {/* AVIS UTILISATEURS */}
       <section className="bg-white py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-6">
@@ -355,6 +330,31 @@ export default function Home() {
                 renderItem={(t) => <TestimonialCard testimonial={t} />}
               />
             )}
+          </Reveal>
+        </div>
+      </section>
+
+      {/* APP MOBILE — phase 2 du projet, à venir */}
+      <section className="overflow-hidden bg-navy py-20 sm:py-24">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1fr_auto]">
+          <Reveal>
+            <Kicker tone="text-sable">Phase 2 du projet</Kicker>
+            <h2 className="mt-3 font-heading text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+              L'app mobile SailingLoc arrive bientôt
+            </h2>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
+              Cherche un bateau, échange avec les propriétaires et gère tes réservations
+              depuis ton téléphone, où que tu sois. La prochaine étape du projet SailingLoc :
+              une application native, disponible sur iOS et Android.
+            </p>
+            <StoreBadges className="mt-7" />
+            <p className="mt-3 text-xs text-white/40">
+              En développement — l'application n'est pas encore disponible au téléchargement.
+            </p>
+          </Reveal>
+
+          <Reveal delay={150}>
+            <PhoneMockup src={appPreviewHome} alt="Aperçu de l'application mobile SailingLoc" />
           </Reveal>
         </div>
       </section>
