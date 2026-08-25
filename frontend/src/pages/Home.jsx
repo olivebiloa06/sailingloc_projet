@@ -334,11 +334,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* APP MOBILE — phase 2 du projet, à venir */}
+      {/* APP MOBILE — évolution produit à venir (distinct de la "Phase 2"
+          du CDC, qui désigne l'expansion géographique européenne) */}
       <section className="overflow-hidden bg-navy py-20 sm:py-24">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1fr_auto]">
           <Reveal>
-            <Kicker tone="text-sable">Phase 2 du projet</Kicker>
+            <Kicker tone="text-sable">Prochaine étape</Kicker>
             <h2 className="mt-3 font-heading text-2xl font-semibold tracking-tight text-white sm:text-3xl">
               L'app mobile SailingLoc arrive bientôt
             </h2>
