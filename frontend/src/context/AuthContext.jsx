@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useCallback } from "react";
-import api, { setAccessToken } from "../services/api";
+import api, { setAccessToken, refreshSession } from "../services/api";
 
 export const AuthContext = createContext(null);
 
@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
   // l'utilisateur ait à se reconnecter à chaque rechargement de page.
     const restoreSession = useCallback(async () => {
     try {
-      const { data } = await api.post("/auth/refresh", null, { timeout: 30000 });
+      const { data } = await refreshSession();
       setAccessToken(data.accessToken);
       setUser(data.user);
     } catch {

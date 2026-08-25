@@ -50,8 +50,21 @@ api.interceptors.request.use((config) => {
 
 // Évite de déclencher plusieurs appels /auth/refresh en parallèle si
 // plusieurs requêtes échouent en même temps (ex: deux appels API lancés en
-// même temps juste après l'expiration de l'access token).
+// même temps juste après l'expiration de l'access token). Le refresh token
+// étant à usage unique côté serveur (rotation à chaque renouvellement), deux
+// appels concurrents avec le même cookie se traduiraient par un 401 sur le
+// second — d'où l'importance que TOUT appelant (interceptor ci-dessous, mais
+// aussi AuthContext au chargement de l'app) partage la même promesse.
 let refreshPromise = null;
+
+export function refreshSession() {
+  if (!refreshPromise) {
+    refreshPromise = api.post("/auth/refresh").finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
 
 function isAuthEndpoint(url = "") {
   return (
@@ -73,13 +86,7 @@ api.interceptors.response.use(
       config._retried = true;
 
       try {
-        if (!refreshPromise) {
-          refreshPromise = api.post("/auth/refresh").finally(() => {
-            refreshPromise = null;
-          });
-        }
-
-        const { data } = await refreshPromise;
+        const { data } = await refreshSession();
         setAccessToken(data.accessToken);
         config.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(config);
