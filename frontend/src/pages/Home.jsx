@@ -4,6 +4,8 @@ import HorizonDivider from "../components/HorizonDivider";
 import BoatMark from "../components/BoatMark";
 import Carousel from "../components/Carousel";
 import Reveal from "../components/Reveal";
+import PhoneMockup from "../components/PhoneMockup";
+import StoreBadges from "../components/StoreBadges";
 import api from "../services/api";
 import { usePageMeta } from "../hooks/usePageMeta";
 
@@ -17,6 +19,7 @@ import imgCroatie from "../assets/pexels-dendoktoor-28648190.jpg";
 import imgArcachon from "../assets/sulox32-istanbul-2912249_1920.jpg";
 import imgVoilier1 from "../assets/bergadder-ship-10038606_1920.jpg";
 import imgVoilier2 from "../assets/veverkolog-ship-8308680_1920.jpg";
+import appPreviewHome from "../assets/app-preview-home.jpg";
 
 // (HeroSearch supprimé — la barre de recherche est désormais dans le Header)
 
@@ -294,6 +297,31 @@ export default function Home() {
               </Link>
             </Reveal>
           </div>
+        </div>
+      </section>
+
+      {/* APP MOBILE — phase 2 du projet, à venir */}
+      <section className="overflow-hidden bg-navy py-20 sm:py-24">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 lg:grid-cols-[1fr_auto]">
+          <Reveal>
+            <Kicker tone="text-sable">Phase 2 du projet</Kicker>
+            <h2 className="mt-3 font-heading text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+              L'app mobile SailingLoc arrive bientôt
+            </h2>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">
+              Cherche un bateau, échange avec les propriétaires et gère tes réservations
+              depuis ton téléphone, où que tu sois. La prochaine étape du projet SailingLoc :
+              une application native, disponible sur iOS et Android.
+            </p>
+            <StoreBadges className="mt-7" />
+            <p className="mt-3 text-xs text-white/40">
+              En développement — l'application n'est pas encore disponible au téléchargement.
+            </p>
+          </Reveal>
+
+          <Reveal delay={150}>
+            <PhoneMockup src={appPreviewHome} alt="Aperçu de l'application mobile SailingLoc" />
+          </Reveal>
         </div>
       </section>
 
