@@ -28,7 +28,7 @@ export default function RessourcesProprietaires() {
           <div className="mt-4 space-y-4">
             {ETAPES.map((e) => (
               <div key={e.num} className="flex gap-4 rounded-xl border border-gray-100 bg-white p-4">
-                <span className="font-heading text-2xl font-bold text-sable">{e.num}</span>
+                <span className="font-heading text-2xl font-bold text-navy">{e.num}</span>
                 <div>
                   <p className="font-semibold text-navy">{e.titre}</p>
                   <p className="mt-1 text-sm text-gray-600">{e.desc}</p>

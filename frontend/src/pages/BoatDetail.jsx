@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
+import { boatAltText } from "../utils/boatAlt";
 import BoatMark from "../components/BoatMark";
 import { usePageMeta } from "../hooks/usePageMeta";
 
@@ -45,6 +46,7 @@ export default function BoatDetail() {
   const [boat, setBoat] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [bookedDates, setBookedDates] = useState([]);
 
   const [bookingForm, setBookingForm] = useState({
     dateDebut: "",
@@ -85,6 +87,19 @@ export default function BoatDetail() {
     };
 
     fetchBoat();
+
+    // Périodes déjà réservées — affichées en texte à côté des champs de
+    // date, pour que l'indisponibilité ne soit jamais signalée uniquement
+    // par une contrainte invisible (CDC accessibilité D.2.d).
+    api
+      .get(`/bookings/boat/${id}/booked-dates`)
+      .then((res) => {
+        if (active) setBookedDates(res.data.bookedDates || []);
+      })
+      .catch(() => {
+        if (active) setBookedDates([]);
+      });
+
     return () => {
       active = false;
     };
@@ -183,7 +198,7 @@ export default function BoatDetail() {
         <div>
           <div className="relative h-80 overflow-hidden rounded-2xl bg-gradient-to-br from-navy to-sky">
             {image ? (
-              <img src={image} alt={boat.nom} className="h-full w-full object-cover" />
+              <img src={image} alt={boatAltText(boat)} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center">
                 <BoatMark className="h-14 w-14 text-white/40" />
@@ -290,6 +305,21 @@ export default function BoatDetail() {
                 ) : (
                   <div className="rounded-lg bg-cloud px-3 py-2 text-xs font-medium text-gray-500">
                     Disponibilités à confirmer avec le propriétaire
+                  </div>
+                )}
+
+                {/* Indisponibilités signalées par texte, pas seulement par
+                    une contrainte de date invisible pour un lecteur d'écran. */}
+                {bookedDates.length > 0 && (
+                  <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <p className="font-medium">Déjà réservé :</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {bookedDates.map((b, i) => (
+                        <li key={i}>
+                          du {formatLongDate(b.dateDebut)} au {formatLongDate(b.dateFin)}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 

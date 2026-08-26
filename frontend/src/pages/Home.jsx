@@ -141,7 +141,7 @@ function Kicker({ children, tone = "text-sky" }) {
 
 function Stars({ rating }) {
   return (
-    <div className="flex gap-0.5 text-sable">
+    <div className="flex gap-0.5 text-amber-600">
       {Array.from({ length: 5 }).map((_, i) => (
         <svg key={i} viewBox="0 0 20 20" className="h-3.5 w-3.5" fill={i < rating ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1">
           <path d="M10 1.5 L12.5 7 L18.5 7.7 L14 11.8 L15.2 18 L10 14.8 L4.8 18 L6 11.8 L1.5 7.7 L7.5 7 Z" strokeLinejoin="round" />
@@ -247,7 +247,7 @@ export default function Home() {
       <section className="bg-cloud py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-6">
           <Reveal>
-            <Kicker tone="text-sable">Où larguer les amarres</Kicker>
+            <Kicker>Où larguer les amarres</Kicker>
             <h2 className="mt-3 font-heading text-2xl font-semibold tracking-tight text-navy sm:text-3xl">Top destinations</h2>
           </Reveal>
           <Reveal delay={100} className="mt-10">

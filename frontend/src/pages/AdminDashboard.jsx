@@ -489,7 +489,7 @@ export default function AdminDashboard() {
                   <span className="text-sm font-semibold text-navy">{r.User?.prenom} {r.User?.nom}</span>
                   <span className="text-xs text-gray-400">sur</span>
                   <span className="text-sm text-gray-600">{r.Boat?.nom}</span>
-                  <span className="rounded-full bg-sable/20 px-2 py-0.5 text-xs font-semibold text-sable">★ {r.note}/5</span>
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">★ {r.note}/5</span>
                 </div>
                 <p className="mt-1 text-sm text-gray-500">{r.commentaire}</p>
               </div>

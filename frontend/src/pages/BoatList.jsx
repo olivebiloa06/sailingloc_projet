@@ -4,6 +4,7 @@ import api from "../services/api";
 import { resolveImageUrl } from "../utils/assets";
 import BoatMark from "../components/BoatMark";
 import FavoriteButton from "../components/FavoriteButton";
+import { boatAltText } from "../utils/boatAlt";
 import BoatMap from "../components/BoatMap";
 import WeatherPanel from "../components/WeatherPanel";
 import { usePageMeta } from "../hooks/usePageMeta";
@@ -58,7 +59,7 @@ function BoatCard({ boat, index = 0 }) {
       <div className="relative h-44 overflow-hidden bg-gradient-to-br from-navy to-sky">
         <img
           src={image || fallbackImg}
-          alt={boat.nom}
+          alt={boatAltText(boat)}
           className="h-full w-full object-cover transition group-hover:scale-105"
           onError={(e) => { e.target.src = fallbackImg; }}
         />

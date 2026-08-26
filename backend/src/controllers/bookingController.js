@@ -389,3 +389,37 @@ exports.cancelBooking = async (req, res) => {
     });
   }
 };
+
+// =========================
+// PÉRIODES DÉJÀ RÉSERVÉES (public)
+// =========================
+// Utilisé par la fiche bateau pour signaler par texte les dates déjà prises
+// AVANT que le visiteur ne choisisse une période (CDC accessibilité D.2.d :
+// "dates indisponibles signalées par texte", pas seulement via une erreur
+// après coup). Ne renvoie que des dates — aucune donnée personnelle sur le
+// locataire, donc pas besoin d'authentification.
+exports.getBookedDates = async (req, res) => {
+  try {
+    const { boatId } = req.params;
+
+    const bookings = await Booking.findAll({
+      where: {
+        boatId,
+        statut: { [Op.ne]: "annulee" },
+      },
+      attributes: ["dateDebut", "dateFin"],
+      order: [["dateDebut", "ASC"]],
+    });
+
+    return res.status(200).json({
+      bookedDates: bookings.map((b) => ({
+        dateDebut: b.dateDebut,
+        dateFin: b.dateFin,
+      })),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};

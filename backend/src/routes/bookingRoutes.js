@@ -34,6 +34,14 @@ router.get(
   bookingController.getOwnerBookingRequests
 );
 
+// Périodes déjà réservées pour un bateau — public, aucune donnée
+// personnelle (juste des dates). Doit être déclaré AVANT "/:id" plus bas
+// pour la même raison que "/owner/demandes" ci-dessus.
+router.get(
+  "/boat/:boatId/booked-dates",
+  bookingController.getBookedDates
+);
+
 // Détail d'une réservation (vérification de propriété dans le contrôleur)
 router.get(
   "/:id",

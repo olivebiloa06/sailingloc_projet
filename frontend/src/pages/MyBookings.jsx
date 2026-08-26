@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api, { openFileInNewTab } from "../services/api";
 import { resolveImageUrl } from "../utils/assets";
+import { boatAltText } from "../utils/boatAlt";
 import InlineAlert from "../components/InlineAlert";
 
 const STATUS_STYLES = {
@@ -86,7 +87,7 @@ export default function MyBookings() {
           return (
             <div key={booking.id} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4">
               <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-navy to-sky">
-                {image && <img src={image} alt={boat?.nom} className="h-full w-full object-cover" />}
+                {image && <img src={image} alt={boatAltText(boat)} className="h-full w-full object-cover" />}
               </div>
 
               <div className="flex flex-1 flex-col">

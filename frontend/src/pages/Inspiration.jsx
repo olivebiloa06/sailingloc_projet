@@ -9,7 +9,7 @@ const CATEGORY_COLORS = {
   "Actualités nautiques": "bg-sky/10 text-sky",
   "Guide de voyage": "bg-green-50 text-green-700",
   "Conseils de navigation": "bg-amber-50 text-amber-700",
-  "Destination tendance": "bg-sable/20 text-sable",
+  "Destination tendance": "bg-orange-50 text-orange-700",
 };
 const GRADIENTS = ["from-navy to-sky", "from-sky to-navy", "from-navy to-abysse", "from-abysse to-sky", "from-sky to-abysse", "from-navy to-sky"];
 const DESTINATIONS_TENDANCE = [

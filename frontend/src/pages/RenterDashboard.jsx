@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api, { openFileInNewTab } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
+import { boatAltText } from "../utils/boatAlt";
 import BoatMark from "../components/BoatMark";
 import InlineAlert from "../components/InlineAlert";
 
@@ -51,7 +52,7 @@ function ReviewModal({ booking, onClose, onSubmit }) {
         <div className="mt-4 flex gap-1">
           {[1, 2, 3, 4, 5].map((n) => (
             <button key={n} type="button" onClick={() => setRating(n)}>
-              <svg viewBox="0 0 20 20" className={`h-7 w-7 ${n <= rating ? "text-sable" : "text-gray-300"}`} fill="currentColor">
+              <svg viewBox="0 0 20 20" className={`h-7 w-7 ${n <= rating ? "text-amber-600" : "text-gray-300"}`} fill="currentColor">
                 <path d="M10 1.5 L12.5 7 L18.5 7.7 L14 11.8 L15.2 18 L10 14.8 L4.8 18 L6 11.8 L1.5 7.7 L7.5 7 Z" />
               </svg>
             </button>
@@ -168,7 +169,7 @@ export default function RenterDashboard() {
             return (
               <div key={b.id} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4">
                 <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-navy to-sky">
-                  {img ? <img src={img} alt={boat?.nom} className="h-full w-full object-cover" /> : (
+                  {img ? <img src={img} alt={boatAltText(boat)} className="h-full w-full object-cover" /> : (
                     <div className="flex h-full items-center justify-center"><BoatMark className="h-6 w-6 text-white/40" /></div>
                   )}
                 </div>
@@ -191,7 +192,7 @@ export default function RenterDashboard() {
                       </button>
                     )}
                     {canReview && (
-                      <button type="button" onClick={() => setReviewBooking(b)} className="rounded-lg border border-sable px-3 py-1 text-xs font-semibold text-sable hover:bg-sable/10">
+                      <button type="button" onClick={() => setReviewBooking(b)} className="rounded-lg border border-navy px-3 py-1 text-xs font-semibold text-navy hover:bg-cloud">
                         Laisser un avis
                       </button>
                     )}

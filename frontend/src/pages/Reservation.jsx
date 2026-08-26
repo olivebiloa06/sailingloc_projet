@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
 import { resolveImageUrl } from "../utils/assets";
+import { boatAltText } from "../utils/boatAlt";
 import BoatMark from "../components/BoatMark";
 
 function formatDate(value) {
@@ -96,7 +97,7 @@ export default function Reservation() {
       <div className="mt-6 flex gap-4 rounded-xl border border-gray-200 bg-white p-4">
         <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-navy to-sky">
           {image ? (
-            <img src={image} alt={boat?.nom} className="h-full w-full object-cover" />
+            <img src={image} alt={boatAltText(boat)} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full items-center justify-center">
               <BoatMark className="h-8 w-8 text-white/40" />

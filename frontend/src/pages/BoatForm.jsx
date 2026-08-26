@@ -170,31 +170,45 @@ function BoatMediaPanel({ boatId, imageUrl, onImageUploaded }) {
           {docError && (
             <p className="col-span-2 text-xs text-red-600">{docError}</p>
           )}
-          <input
-            type="text"
-            required
-            placeholder="Nom du document"
-            value={docForm.nom}
-            onChange={(e) => setDocForm((p) => ({ ...p, nom: e.target.value }))}
-            className="col-span-2 rounded-lg border border-gray-300 px-2 py-1.5 text-xs"
-          />
-          <select
-            value={docForm.type}
-            onChange={(e) => setDocForm((p) => ({ ...p, type: e.target.value }))}
-            className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs"
-          >
-            {DOCUMENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-          <input
-            type="file"
-            accept="application/pdf,image/jpeg,image/png"
-            onChange={(e) => setDocFile(e.target.files?.[0] || null)}
-            className="text-xs"
-          />
+          <div className="col-span-2">
+            <label htmlFor="doc-nom" className="mb-1 block text-xs font-medium text-navy">
+              Nom du document <span aria-hidden="true" className="text-red-500">*</span>
+            </label>
+            <input
+              id="doc-nom"
+              type="text"
+              required
+              aria-required="true"
+              value={docForm.nom}
+              onChange={(e) => setDocForm((p) => ({ ...p, nom: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs"
+            />
+          </div>
+          <div>
+            <label htmlFor="doc-type" className="mb-1 block text-xs font-medium text-navy">Type de document</label>
+            <select
+              id="doc-type"
+              value={docForm.type}
+              onChange={(e) => setDocForm((p) => ({ ...p, type: e.target.value }))}
+              className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs"
+            >
+              {DOCUMENT_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="doc-file" className="mb-1 block text-xs font-medium text-navy">Fichier</label>
+            <input
+              id="doc-file"
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              onChange={(e) => setDocFile(e.target.files?.[0] || null)}
+              className="text-xs"
+            />
+          </div>
           <button
             type="submit"
             disabled={uploadingDoc}
@@ -294,7 +308,10 @@ export default function BoatForm() {
         navigate(`/mes-bateaux/${res.data.boat.id}/edit`);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Une erreur est survenue.");
+      setError(
+        err.response?.data?.message ||
+          "Impossible d'enregistrer ce bateau pour le moment. Vérifie les champs obligatoires et réessaie."
+      );
     } finally {
       setSaving(false);
     }
@@ -356,12 +373,14 @@ export default function BoatForm() {
         )}
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-navy">
-            Nom du bateau
+          <label htmlFor="boat-nom" className="mb-1 block text-sm font-medium text-navy">
+            Nom du bateau <span aria-hidden="true" className="text-red-500">*</span>
           </label>
           <input
+            id="boat-nom"
             type="text"
             required
+            aria-required="true"
             value={form.nom}
             onChange={(e) => handleChange("nom", e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
@@ -370,8 +389,9 @@ export default function BoatForm() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-navy">Type</label>
+            <label htmlFor="boat-type" className="mb-1 block text-sm font-medium text-navy">Type</label>
             <select
+              id="boat-type"
               value={form.type}
               onChange={(e) => handleChange("type", e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
@@ -384,12 +404,14 @@ export default function BoatForm() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-navy">
-              Localisation
+            <label htmlFor="boat-localisation" className="mb-1 block text-sm font-medium text-navy">
+              Localisation <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
+              id="boat-localisation"
               type="text"
               required
+              aria-required="true"
               value={form.localisation}
               onChange={(e) => handleChange("localisation", e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
@@ -398,11 +420,13 @@ export default function BoatForm() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-navy">
-            Description
+          <label htmlFor="boat-description" className="mb-1 block text-sm font-medium text-navy">
+            Description <span aria-hidden="true" className="text-red-500">*</span>
           </label>
           <textarea
+            id="boat-description"
             required
+            aria-required="true"
             rows={4}
             value={form.description}
             onChange={(e) => handleChange("description", e.target.value)}
@@ -412,36 +436,41 @@ export default function BoatForm() {
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-navy">
-              Prix / jour (€)
+            <label htmlFor="boat-prix" className="mb-1 block text-sm font-medium text-navy">
+              Prix / jour (€) <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
+              id="boat-prix"
               type="number"
               min="0"
               required
+              aria-required="true"
               value={form.prixJour}
               onChange={(e) => handleChange("prixJour", e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-navy">
-              Capacité (pers.)
+            <label htmlFor="boat-capacite" className="mb-1 block text-sm font-medium text-navy">
+              Capacité (pers.) <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
+              id="boat-capacite"
               type="number"
               min="1"
               required
+              aria-required="true"
               value={form.capacite}
               onChange={(e) => handleChange("capacite", e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-navy">
+            <label htmlFor="boat-longueur" className="mb-1 block text-sm font-medium text-navy">
               Longueur (m)
             </label>
             <input
+              id="boat-longueur"
               type="number"
               min="0"
               step="0.1"

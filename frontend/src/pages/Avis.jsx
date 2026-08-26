@@ -7,7 +7,7 @@ function Stars({ note }) {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((s) => (
-        <svg key={s} viewBox="0 0 20 20" className={`h-4 w-4 ${s <= note ? "text-sable" : "text-gray-200"}`} fill="currentColor">
+        <svg key={s} viewBox="0 0 20 20" className={`h-4 w-4 ${s <= note ? "text-amber-600" : "text-gray-200"}`} fill="currentColor">
           <path d="M10 1.5 L12.5 7 L18.5 7.7 L14 11.8 L15.2 18 L10 14.8 L4.8 18 L6 11.8 L1.5 7.7 L7.5 7 Z" />
         </svg>
       ))}

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { resolveImageUrl } from "../utils/assets";
+import { boatAltText } from "../utils/boatAlt";
 import BoatMark from "../components/BoatMark";
 import InlineAlert from "../components/InlineAlert";
 
@@ -103,7 +104,7 @@ export default function OwnerBoats() {
             >
               <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-navy to-sky">
                 {image ? (
-                  <img src={image} alt={boat.nom} className="h-full w-full object-cover" />
+                  <img src={image} alt={boatAltText(boat)} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center">
                     <BoatMark className="h-8 w-8 text-white/40" />
