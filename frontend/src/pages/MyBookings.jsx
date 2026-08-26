@@ -34,6 +34,14 @@ export default function MyBookings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [contractError, setContractError] = useState("");
+  const [cancelError, setCancelError] = useState("");
+  const [cancellingId, setCancellingId] = useState(null);
+
+  const loadBookings = () => {
+    api.get("/bookings/mes-reservations")
+      .then((res) => setBookings(res.data.bookings || []))
+      .catch(() => setError("Impossible de charger tes réservations."));
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -48,6 +56,23 @@ export default function MyBookings() {
 
     return () => { isMounted = false; };
   }, []);
+
+  // Le backend applique déjà les règles (pas d'annulation après 48h avant le
+  // départ, sauf admin ; remboursement automatique Stripe/PayPal si déjà
+  // payé) — on se contente d'afficher son message d'erreur le cas échéant.
+  const handleCancel = async (booking) => {
+    if (!window.confirm("Annuler cette réservation ? Cette action est définitive.")) return;
+    setCancelError("");
+    setCancellingId(booking.id);
+    try {
+      await api.put(`/bookings/cancel/${booking.id}`);
+      loadBookings();
+    } catch (err) {
+      setCancelError(err.response?.data?.message || "Impossible d'annuler cette réservation.");
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
   // lien avec le geste utilisateur et les navigateurs bloquent le popup.
@@ -69,6 +94,7 @@ export default function MyBookings() {
       {loading && <p className="mt-6 text-sm text-gray-500">Chargement...</p>}
       <InlineAlert message={error} className="mt-6" />
       <InlineAlert message={contractError} onDismiss={() => setContractError("")} className="mt-6" />
+      <InlineAlert message={cancelError} onDismiss={() => setCancelError("")} className="mt-6" />
 
       {!loading && !error && bookings.length === 0 && (
         <p className="mt-6 text-sm text-gray-500">
@@ -83,6 +109,7 @@ export default function MyBookings() {
           const image = resolveImageUrl(boat?.imageUrl);
           const needsPayment = booking.statut === "acceptee";
           const contract = contracts.find((c) => c.bookingId === booking.id);
+          const canCancel = ["en_attente", "acceptee", "confirmee"].includes(booking.statut);
 
           return (
             <div key={booking.id} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4">
@@ -117,6 +144,17 @@ export default function MyBookings() {
                     ) : (
                       <span className="text-xs text-gray-400">Contrat en cours de génération...</span>
                     )
+                  )}
+
+                  {canCancel && (
+                    <button
+                      type="button"
+                      onClick={() => handleCancel(booking)}
+                      disabled={cancellingId === booking.id}
+                      className="inline-flex w-fit items-center rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      {cancellingId === booking.id ? "Annulation..." : "Annuler la réservation"}
+                    </button>
                   )}
                 </div>
               </div>
