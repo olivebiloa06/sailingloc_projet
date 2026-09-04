@@ -39,10 +39,15 @@ function DocumentCard({ doc, onAction }) {
 
   // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
   // lien avec le geste utilisateur et les navigateurs bloquent le popup.
-  const viewDoc = async (download) => {
+  //
+  // Un seul bouton "Télécharger" — Cloudinary force Content-Disposition:
+  // attachment sur les fichiers "raw" quel que soit le paramètre download,
+  // donc un bouton "Voir" séparé ne ferait qu'exactement la même chose
+  // (téléchargement), ce qui induisait en erreur.
+  const downloadDoc = async () => {
     const tab = window.open("", "_blank", "noopener,noreferrer");
     try {
-      await openFileInNewTab(tab, `/documents/${doc.id}/file`, download ? { download: 1 } : undefined);
+      await openFileInNewTab(tab, `/documents/${doc.id}/file`, { download: 1 });
     } catch {
       tab?.close();
       setError("Impossible de charger le document.");
@@ -62,12 +67,8 @@ function DocumentCard({ doc, onAction }) {
           <p className="mt-0.5 text-xs text-gray-400">Soumis le {formatDate(doc.createdAt)}</p>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={() => viewDoc(false)}
+          <button type="button" onClick={downloadDoc}
             className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:border-navy">
-            👁 Voir
-          </button>
-          <button type="button" onClick={() => viewDoc(true)}
-            className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-500">
             ⬇ Télécharger
           </button>
         </div>
