@@ -6,6 +6,23 @@ const { DOCUMENTS_DIR, cloudinary } = require("../middlewares/uploadMiddleware")
 
 const isProduction = process.env.NODE_ENV === "production" && process.env.CLOUDINARY_CLOUD_NAME;
 
+const MIME_TO_EXT = {
+  "application/pdf": "pdf",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+// Sans extension explicite, Cloudinary stocke un fichier "raw" sans savoir
+// le typer : l'URL de livraison ne se termine par aucun .pdf/.jpg, donc le
+// navigateur ne sait ni l'afficher ni proposer le bon lecteur au
+// téléchargement (le fichier arrive bien, juste sans extension). On déduit
+// l'extension du mimetype déclaré, avec l'extension du nom de fichier
+// original en secours.
+function extensionFromFile(file) {
+  return MIME_TO_EXT[file.mimetype] || path.extname(file.originalname).slice(1).toLowerCase() || undefined;
+}
+
 const canAccessDocument = (document, user) => {
   if (user.role === "admin") return true;
   if (document.userId === user.id) return true;
@@ -48,7 +65,12 @@ exports.createDocument = async (req, res) => {
     if (isProduction) {
       const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-          { folder: "sailingloc/documents", resource_type: "raw", public_id: `doc-${req.user.id}-${Date.now()}` },
+          {
+            folder: "sailingloc/documents",
+            resource_type: "raw",
+            public_id: `doc-${req.user.id}-${Date.now()}`,
+            format: extensionFromFile(req.file),
+          },
           (error, result) => { if (error) reject(error); else resolve(result); }
         );
         uploadStream.end(req.file.buffer);

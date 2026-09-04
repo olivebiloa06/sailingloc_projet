@@ -11,6 +11,7 @@
     "seed:images": "node src/seeders/seedImages.js",
     "make-available": "node src/seeders/makeAllBoatsAvailable.js",
     "geocode:backfill": "node src/seeders/backfillGeocode.js",
+    "backfill:document-extensions": "node src/seeders/backfillDocumentExtensions.js",
     "test:watch": "jest --watch",
     "test:ci": "jest --coverage --ci --coverageReporters=lcov --coverageReporters=text",
     "test:load": "node loadtest/load-test.js",
