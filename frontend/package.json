@@ -12,6 +12,7 @@
     "test:cypress": "start-server-and-test \"npm --prefix ../backend run dev\" http://localhost:5000/api/boats \"npm run dev\" http://localhost:5173 \"cypress run\""
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "@tailwindcss/vite": "^4.3.0",
     "axios": "^1.16.1",
     "leaflet": "^1.9.4",

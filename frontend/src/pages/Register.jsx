@@ -4,6 +4,8 @@ import { useAuth } from "../hooks/useAuth";
 import api from "../services/api";
 import { isValidEmail, getPasswordStrengthError } from "../utils/validators";
 import { usePageMeta } from "../hooks/usePageMeta";
+import PasswordInput from "../components/PasswordInput";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 const OWNER_REQUIRED_DOCS = [
   { key: "piece_identite", label: "Pièce d'identité", hint: "Carte nationale d'identité ou passeport (PDF, JPG, PNG)" },
@@ -155,7 +157,14 @@ export default function Register() {
             Déjà inscrit ?{" "}
             <Link to="/login" className="font-medium text-sky hover:underline">Connecte-toi</Link>
           </p>
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
+          <div className="mt-8">
+            <GoogleLoginButton
+              onSuccess={() => navigate("/", { replace: true })}
+              onError={setServerError}
+            />
+          </div>
+
+          <form onSubmit={handleSubmit} className="mt-5 space-y-5" noValidate>
             {serverError && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</div>}
             <div>
               <span className="mb-1 block text-sm font-medium text-navy">Je m'inscris en tant que</span>
@@ -191,14 +200,12 @@ export default function Register() {
             </div>
             <div>
               <label htmlFor="motDePasse" className="mb-1 block text-sm font-medium text-navy">Mot de passe</label>
-              <input id="motDePasse" name="motDePasse" type="password" autoComplete="new-password" value={form.motDePasse} onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30" />
+              <PasswordInput id="motDePasse" name="motDePasse" autoComplete="new-password" value={form.motDePasse} onChange={handleChange} />
               {errors.motDePasse && <p className="mt-1 text-xs text-red-600">{errors.motDePasse}</p>}
             </div>
             <div>
               <label htmlFor="confirmation" className="mb-1 block text-sm font-medium text-navy">Confirmer le mot de passe</label>
-              <input id="confirmation" name="confirmation" type="password" autoComplete="new-password" value={form.confirmation} onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30" />
+              <PasswordInput id="confirmation" name="confirmation" autoComplete="new-password" value={form.confirmation} onChange={handleChange} />
               {errors.confirmation && <p className="mt-1 text-xs text-red-600">{errors.confirmation}</p>}
             </div>
             <button type="submit" disabled={submitting}

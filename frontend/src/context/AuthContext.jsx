@@ -49,6 +49,17 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  // credential = le jeton d'identité Google (JWT), fourni par GoogleLoginButton
+  // via le callback onSuccess de @react-oauth/google. Le backend le vérifie
+  // auprès de Google avant de créer/connecter le compte — le front ne fait
+  // que le relayer, il ne décode ni ne fait confiance à son contenu.
+  const loginWithGoogle = async (credential) => {
+    const { data } = await api.post("/auth/google", { credential });
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+    return data.user;
+  };
+
   const logout = async () => {
     try {
       // Révoque le refresh token côté serveur et efface le cookie. Si
@@ -62,7 +73,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -25,9 +25,17 @@ const User = sequelize.define(
         isEmail: true,
       },
     },
+    // Nullable : un compte créé via "Se connecter avec Google" n'a pas de
+    // mot de passe local. Toute tentative de login par mot de passe sur un
+    // tel compte doit être rejetée explicitement (voir authController.login).
     motDePasse: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
+    },
+    googleId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
     },
     role: {
       type: DataTypes.ENUM("locataire", "proprietaire", "admin"),

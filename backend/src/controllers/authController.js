@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { OAuth2Client } = require("google-auth-library");
 const { User, RefreshToken } = require("../models");
 const { sendEmail } = require("../services/emailService");
 const { isValidEmail, validatePasswordFormat } = require("../utils/validators");
@@ -17,6 +18,8 @@ const {
 // vers admin se fait uniquement via PATCH /api/admin/users/:id/role, route
 // déjà protégée par authorizeRoles("admin").
 const ALLOWED_SELF_ROLES = ["locataire", "proprietaire"];
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Le defaultScope du modèle User exclut déjà motDePasse, mais on garde cette
 // étape explicite en plus (défense en profondeur) : même si un autre point du
@@ -162,6 +165,15 @@ exports.login = async (req, res) => {
       return invalidCredentials();
     }
 
+    // Compte créé via "Se connecter avec Google" : pas de mot de passe local
+    // à comparer. bcrypt.compare planterait sur un hash null — message
+    // explicite plutôt qu'une 500.
+    if (!user.motDePasse) {
+      return res.status(400).json({
+        message: "Ce compte utilise la connexion Google. Utilise le bouton \"Se connecter avec Google\".",
+      });
+    }
+
     const isPasswordValid = await bcrypt.compare(
       motDePasse,
       user.motDePasse
@@ -176,6 +188,83 @@ exports.login = async (req, res) => {
 
     res.status(200).json({
       message: "Connexion réussie",
+      accessToken,
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// =========================
+// GOOGLE — connexion / inscription via "Se connecter avec Google"
+// =========================
+// Le front envoie le jeton d'identité (credential) renvoyé par Google
+// Identity Services. On ne fait JAMAIS confiance à un email envoyé tel
+// quel par le client : verifyIdToken vérifie la signature auprès de
+// Google et garantit que le jeton a bien été émis pour CE Client ID
+// (GOOGLE_CLIENT_ID), donc qu'il vient bien de notre propre bouton.
+exports.googleAuth = async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({ message: "Jeton Google manquant." });
+    }
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(503).json({
+        message: "Connexion Google non configurée sur ce serveur.",
+      });
+    }
+
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch {
+      return res.status(401).json({ message: "Jeton Google invalide." });
+    }
+
+    if (!payload.email_verified) {
+      return res.status(401).json({
+        message: "Adresse email Google non vérifiée.",
+      });
+    }
+
+    // .unscoped() : on a besoin de savoir si motDePasse est déjà posé, pour
+    // décider si on lie ce googleId à un compte mot de passe existant.
+    let user = await User.unscoped().findOne({ where: { googleId: payload.sub } });
+
+    if (!user) {
+      user = await User.unscoped().findOne({ where: { email: payload.email } });
+
+      if (user) {
+        // Compte déjà inscrit par email/mot de passe : on lie Google au
+        // même compte plutôt que de créer un doublon.
+        await user.update({ googleId: payload.sub });
+      } else {
+        user = await User.create({
+          nom: payload.family_name || payload.name || "Utilisateur",
+          prenom: payload.given_name || "",
+          email: payload.email,
+          motDePasse: null,
+          googleId: payload.sub,
+          role: "locataire",
+        });
+      }
+    }
+
+    const accessToken = generateAccessToken(user);
+    await issueRefreshToken(user, res);
+
+    res.status(200).json({
+      message: "Connexion Google réussie",
       accessToken,
       user: sanitizeUser(user),
     });

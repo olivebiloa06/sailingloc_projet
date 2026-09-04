@@ -48,6 +48,7 @@ const resetLimiter = rateLimit({
 // Auth publique
 router.post("/register", registerLimiter, authController.register);
 router.post("/login", loginLimiter, authController.login);
+router.post("/google", loginLimiter, authController.googleAuth);
 
 // Réinitialisation de mot de passe
 router.post("/forgot-password", resetLimiter, authController.forgotPassword);
