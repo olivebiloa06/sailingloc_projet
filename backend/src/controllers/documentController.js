@@ -124,6 +124,11 @@ exports.getDocumentFile = async (req, res) => {
         secure: true,
         flags: download ? "attachment" : undefined,
       });
+      // Sans ça, le navigateur peut mettre en cache cette réponse JSON (via
+      // l'ETag qu'Express génère par défaut) et renvoyer un 304 sans corps
+      // sur un appel suivant identique — le front reçoit alors un JSON vide
+      // et n'a jamais l'URL signée à charger (onglet qui reste blanc).
+      res.set("Cache-Control", "no-store");
       return res.status(200).json({ url: signedUrl });
     }
 
