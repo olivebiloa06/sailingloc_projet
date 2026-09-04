@@ -12,10 +12,14 @@ export default function GoogleLoginButton({ onSuccess, onError }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-center [&>div]:w-full">
+      <div className="flex justify-center">
+        {/* Le SDK Google n'accepte qu'une largeur en pixels (pas "100%" —
+            provoquait un avertissement et un repli sur une largeur par
+            défaut plus étroite que le reste du formulaire). 384 = la
+            largeur du conteneur (max-w-sm) qui enveloppe tout le formulaire. */}
         <GoogleLogin
           locale="fr_FR"
-          width="100%"
+          width="384"
           onSuccess={async (credentialResponse) => {
             try {
               const user = await loginWithGoogle(credentialResponse.credential);
