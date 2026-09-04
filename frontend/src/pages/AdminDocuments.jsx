@@ -40,12 +40,19 @@ function DocumentCard({ doc, onAction }) {
   // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
   // lien avec le geste utilisateur et les navigateurs bloquent le popup.
   //
+  // Pas de "noopener"/"noreferrer" ici : ces deux flags font que
+  // window.open() renvoie null (vérifié) — impossible ensuite de rediriger
+  // l'onglet vers le fichier via tab.location.href, qui échouait donc
+  // silencieusement (onglet ouvert mais qui restait vide pour toujours).
+  // Sans risque ici : l'onglet n'est redirigé que vers une URL Cloudinary
+  // que NOUS générons, jamais vers un contenu fourni par l'utilisateur.
+  //
   // Un seul bouton "Télécharger" — Cloudinary force Content-Disposition:
   // attachment sur les fichiers "raw" quel que soit le paramètre download,
   // donc un bouton "Voir" séparé ne ferait qu'exactement la même chose
   // (téléchargement), ce qui induisait en erreur.
   const downloadDoc = async () => {
-    const tab = window.open("", "_blank", "noopener,noreferrer");
+    const tab = window.open("", "_blank");
     try {
       await openFileInNewTab(tab, `/documents/${doc.id}/file`, { download: 1 });
     } catch {

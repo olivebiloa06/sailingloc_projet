@@ -299,8 +299,15 @@ export default function AdminDashboard() {
 
   // Ouvre l'onglet AVANT l'appel réseau : sinon le délai de l'await casse le
   // lien avec le geste utilisateur et les navigateurs bloquent le popup.
+  //
+  // Pas de "noopener"/"noreferrer" ici : ces deux flags font que
+  // window.open() renvoie null (vérifié) — impossible ensuite de rediriger
+  // l'onglet vers le fichier via tab.location.href, qui échouait donc
+  // silencieusement (onglet ouvert mais qui restait vide pour toujours).
+  // Sans risque ici : l'onglet n'est redirigé que vers une URL Cloudinary
+  // que NOUS générons, jamais vers un contenu fourni par l'utilisateur.
   const downloadDoc = async (id) => {
-    const tab = window.open("", "_blank", "noopener,noreferrer");
+    const tab = window.open("", "_blank");
     try {
       await openFileInNewTab(tab, `/documents/${id}/file`);
     } catch {
