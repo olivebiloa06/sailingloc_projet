@@ -31,6 +31,8 @@ const COLUMNS = [
 
 const LEGAL_LINKS = [
   { to: "/mentions-legales", label: "Mentions légales" },
+  { to: "/cgu", label: "CGU" },
+  { to: "/cgv", label: "CGV" },
   { to: "/confidentialite", label: "Confidentialité" },
   { to: "/cookies", label: "Cookies" },
 ];

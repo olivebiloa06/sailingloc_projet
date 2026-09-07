@@ -64,6 +64,14 @@ const uploadBoatImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
+// Upload galerie bateau (plusieurs photos en plus de la couverture) — même
+// storage que la couverture, simplement monté avec .array() côté route.
+const uploadBoatGallery = multer({
+  storage: cloudinaryBoatStorage,
+  fileFilter: imageFileFilter,
+  limits: { fileSize: 5 * 1024 * 1024, files: 8 },
+});
+
 // Upload documents (memoryStorage en prod pour uploader vers Cloudinary manuellement)
 const uploadDocument = multer({
   storage: isProduction ? multer.memoryStorage() : makeStorage(DOCUMENTS_DIR),
@@ -73,6 +81,7 @@ const uploadDocument = multer({
 
 module.exports = {
   uploadBoatImage,
+  uploadBoatGallery,
   uploadDocument,
   BOAT_IMAGES_DIR,
   DOCUMENTS_DIR,

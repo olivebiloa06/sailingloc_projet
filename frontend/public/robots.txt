@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+Disallow: /mon-compte
+Disallow: /mes-bateaux
+Disallow: /mes-reservations
+Disallow: /mes-messages
+Disallow: /demandes
+Disallow: /admin
+Disallow: /reservations/
+Disallow: /booking/success
+Disallow: /booking/cancel
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://sailingloc.fr/sitemap.xml

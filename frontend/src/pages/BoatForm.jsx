@@ -28,9 +28,12 @@ const DOCUMENT_STATUS_LABELS = {
 
 // Photo + documents du bateau — séparé du formulaire principal parce qu'il
 // faut un id de bateau existant pour attacher un fichier à quoi que ce soit.
-function BoatMediaPanel({ boatId, imageUrl, onImageUploaded }) {
+function BoatMediaPanel({ boatId, imageUrl, onImageUploaded, galleryImages, onGalleryChange }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState("");
+
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [galleryError, setGalleryError] = useState("");
 
   const [documents, setDocuments] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
@@ -70,6 +73,36 @@ function BoatMediaPanel({ boatId, imageUrl, onImageUploaded }) {
       setPhotoError(err.response?.data?.message || "Échec de l'envoi de la photo.");
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const handleGalleryChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setUploadingGallery(true);
+    setGalleryError("");
+
+    const formData = new FormData();
+    files.forEach((file) => formData.append("images", file));
+
+    try {
+      const res = await api.post(`/uploads/boat/${boatId}/gallery`, formData);
+      onGalleryChange([...(galleryImages || []), ...(res.data.images || [])]);
+    } catch (err) {
+      setGalleryError(err.response?.data?.message || "Échec de l'envoi des photos.");
+    } finally {
+      setUploadingGallery(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleGalleryDelete = async (imageId) => {
+    try {
+      await api.delete(`/uploads/boat/${boatId}/gallery/${imageId}`);
+      onGalleryChange((galleryImages || []).filter((img) => img.id !== imageId));
+    } catch (err) {
+      setGalleryError(err.response?.data?.message || "Échec de la suppression de la photo.");
     }
   };
 
@@ -132,6 +165,54 @@ function BoatMediaPanel({ boatId, imageUrl, onImageUploaded }) {
               <p className="mt-1 text-xs text-red-600">{photoError}</p>
             )}
           </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="font-heading text-base font-semibold text-navy">
+          Galerie photo
+        </h2>
+        <p className="mt-1 text-xs text-gray-400">
+          Photos supplémentaires affichées sur la fiche du bateau, en plus de la photo de couverture ci-dessus.
+        </p>
+
+        {(galleryImages || []).length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-3">
+            {galleryImages.map((img) => (
+              <div key={img.id} className="relative h-20 w-28 overflow-hidden rounded-lg bg-gray-100">
+                <img
+                  src={resolveImageUrl(img.url)}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleGalleryDelete(img.id)}
+                  aria-label="Supprimer cette photo"
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-navy/80 text-xs text-white hover:bg-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={handleGalleryChange}
+            disabled={uploadingGallery}
+            className="text-sm"
+          />
+          {uploadingGallery && (
+            <p className="mt-1 text-xs text-gray-400">Envoi en cours...</p>
+          )}
+          {galleryError && (
+            <p className="mt-1 text-xs text-red-600">{galleryError}</p>
+          )}
         </div>
       </div>
 
@@ -240,6 +321,7 @@ export default function BoatForm() {
 
   const [form, setForm] = useState(EMPTY_FORM);
   const [imageUrl, setImageUrl] = useState(null);
+  const [galleryImages, setGalleryImages] = useState([]);
   const [docBlocked, setDocBlocked] = useState(false);
 
   // Vérifie dès le chargement si le propriétaire a un doc validé.
@@ -275,6 +357,7 @@ export default function BoatForm() {
           avecSkipper: Boolean(boat.avecSkipper),
         });
         setImageUrl(boat.imageUrl || null);
+        setGalleryImages(boat.images || []);
       })
       .catch(() => setError("Impossible de charger ce bateau."))
       .finally(() => setLoading(false));
@@ -508,6 +591,8 @@ export default function BoatForm() {
           boatId={id}
           imageUrl={imageUrl}
           onImageUploaded={setImageUrl}
+          galleryImages={galleryImages}
+          onGalleryChange={setGalleryImages}
         />
       )}
     </div>

@@ -19,6 +19,8 @@ import RessourcesProprietaires from "../pages/RessourcesProprietaires";
 import MentionsLegales from "../pages/MentionsLegales";
 import Confidentialite from "../pages/Confidentialite";
 import Cookies from "../pages/Cookies";
+import CGU from "../pages/CGU";
+import CGV from "../pages/CGV";
 import Contact from "../pages/Contact";
 import Messages from "../pages/Messages";
 import Register from "../pages/Register";
@@ -67,6 +69,8 @@ function AppRoutes() {
         <Route path="/mentions-legales" element={<Layout><MentionsLegales /></Layout>} />
         <Route path="/confidentialite" element={<Layout><Confidentialite /></Layout>} />
         <Route path="/cookies" element={<Layout><Cookies /></Layout>} />
+        <Route path="/cgu" element={<Layout><CGU /></Layout>} />
+        <Route path="/cgv" element={<Layout><CGV /></Layout>} />
         <Route path="/contact" element={<Layout><Contact /></Layout>} />
         <Route path="/register" element={<Register />} />
         <Route path="/mes-messages" element={<ProtectedRoute><Layout><Messages /></Layout></ProtectedRoute>} />

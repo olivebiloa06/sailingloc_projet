@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { Boat, User, Availability, Document, Review, sequelize } = require("../models");
+const { Boat, User, Availability, Document, Review, BoatImage, sequelize } = require("../models");
 const { isValidPrix, isValidCapacite, isValidLongueur, isValidBoatType } = require("../utils/validators");
 const { geocodeLocation } = require("../utils/geocode");
 
@@ -258,6 +258,12 @@ exports.getBoatById = async (req, res) => {
           as: "availabilities",
           where: { statut: "disponible" },
           required: false,
+        },
+        {
+          model: BoatImage,
+          as: "images",
+          separate: true,
+          order: [["ordre", "ASC"]],
         },
       ],
     });

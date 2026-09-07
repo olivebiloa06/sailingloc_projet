@@ -32,6 +32,18 @@ function formatLongDate(value) {
   });
 }
 
+function ReviewStars({ rating }) {
+  return (
+    <div className="flex gap-0.5 text-amber-600" aria-hidden="true">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <svg key={i} viewBox="0 0 20 20" className="h-3.5 w-3.5" fill={i < rating ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1">
+          <path d="M10 1.5 L12.5 7 L18.5 7.7 L14 11.8 L15.2 18 L10 14.8 L4.8 18 L6 11.8 L1.5 7.7 L7.5 7 Z" strokeLinejoin="round" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
 // Convertit une date ISO ("2026-06-21T00:00:00.000Z") au format attendu par
 // un <input type="date"> ("2026-06-21"), pour contraindre min/max.
 function toInputDate(value) {
@@ -47,6 +59,10 @@ export default function BoatDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [bookedDates, setBookedDates] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsAverage, setReviewsAverage] = useState(null);
+  const [reviewsCount, setReviewsCount] = useState(0);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const [bookingForm, setBookingForm] = useState({
     dateDebut: "",
@@ -87,6 +103,23 @@ export default function BoatDetail() {
     };
 
     fetchBoat();
+
+    // Avis publiés pour ce bateau — note moyenne + liste, calculées côté API.
+    api
+      .get(`/reviews/boat/${id}`)
+      .then((res) => {
+        if (!active) return;
+        setReviews(res.data.reviews || []);
+        setReviewsAverage(res.data.average ?? null);
+        setReviewsCount(res.data.count || 0);
+      })
+      .catch(() => {
+        if (active) {
+          setReviews([]);
+          setReviewsAverage(null);
+          setReviewsCount(0);
+        }
+      });
 
     // Périodes déjà réservées — affichées en texte à côté des champs de
     // date, pour que l'indisponibilité ne soit jamais signalée uniquement
@@ -185,7 +218,14 @@ export default function BoatDetail() {
     );
   }
 
-  const image = resolveImageUrl(boat.imageUrl);
+  // Galerie : couverture (boat.imageUrl) + photos additionnelles, dans
+  // l'ordre défini par le propriétaire. La couverture reste utilisée telle
+  // quelle sur les cartes/listes — la galerie ne s'affiche que sur cette page.
+  const galleryImages = [
+    ...(boat.imageUrl ? [boat.imageUrl] : []),
+    ...(boat.images || []).map((img) => img.url),
+  ].map(resolveImageUrl);
+  const activeImage = galleryImages[activeImageIndex] || galleryImages[0] || null;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
@@ -197,14 +237,34 @@ export default function BoatDetail() {
         {/* INFO — colonne gauche */}
         <div>
           <div className="relative h-80 overflow-hidden rounded-2xl bg-gradient-to-br from-navy to-sky">
-            {image ? (
-              <img src={image} alt={boatAltText(boat)} className="h-full w-full object-cover" />
+            {activeImage ? (
+              <img src={activeImage} alt={boatAltText(boat)} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center">
                 <BoatMark className="h-14 w-14 text-white/40" />
               </div>
             )}
           </div>
+
+          {galleryImages.length > 1 && (
+            <div className="mt-3 flex gap-2 overflow-x-auto" role="tablist" aria-label="Photos du bateau">
+              {galleryImages.map((img, i) => (
+                <button
+                  key={img + i}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === activeImageIndex}
+                  aria-label={`Photo ${i + 1} sur ${galleryImages.length}`}
+                  onClick={() => setActiveImageIndex(i)}
+                  className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                    i === activeImageIndex ? "border-sky" : "border-transparent opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <img src={img} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="mt-6 flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -214,6 +274,13 @@ export default function BoatDetail() {
               <p className="mt-1 text-sm text-gray-500">
                 {BOAT_TYPE_LABELS[boat.type] || boat.type} · {boat.localisation}
               </p>
+              {reviewsAverage !== null && (
+                <div className="mt-2 flex items-center gap-2">
+                  <ReviewStars rating={Math.round(reviewsAverage)} />
+                  <span className="text-sm font-medium text-navy">{reviewsAverage}/5</span>
+                  <span className="text-sm text-gray-400">({reviewsCount} avis)</span>
+                </div>
+              )}
             </div>
             {boat.avecSkipper && (
               <span className="rounded-full bg-cloud px-3 py-1 text-xs font-semibold text-navy">
@@ -244,6 +311,40 @@ export default function BoatDetail() {
               </span>
             </div>
           )}
+
+          <div className="mt-8">
+            <h2 className="font-heading text-lg font-semibold text-navy">
+              Avis {reviewsCount > 0 && `(${reviewsCount})`}
+            </h2>
+            {reviews.length === 0 ? (
+              <p className="mt-2 text-sm text-gray-500">
+                Aucun avis pour ce bateau pour le moment.
+              </p>
+            ) : (
+              <ul className="mt-4 space-y-4">
+                {reviews.map((r) => (
+                  <li key={r.id} className="rounded-xl border border-gray-100 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <ReviewStars rating={r.note} />
+                        <span className="text-sm font-medium text-navy">
+                          {r.User?.prenom} {r.User?.nom?.[0]}.
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-400">
+                        {formatLongDate(r.createdAt)}
+                      </span>
+                    </div>
+                    {r.commentaire && (
+                      <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                        {r.commentaire}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         {/* RÉSERVATION — colonne droite, sticky */}

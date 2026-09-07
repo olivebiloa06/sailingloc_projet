@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { Boat } = require("../models");
+const { Boat, BoatImage } = require("../models");
 const { isFileSignatureValid } = require("../utils/fileSignature");
 const { cloudinary } = require("../middlewares/uploadMiddleware");
 
@@ -97,6 +97,93 @@ exports.deleteBoatImage = async (req, res) => {
     await boat.update({ imageUrl: null });
 
     return res.status(200).json({ message: "Image supprimée avec succès", boat });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// Ajouter des photos à la galerie du bateau (en plus de la couverture)
+exports.uploadBoatGalleryImages = async (req, res) => {
+  try {
+    const { boatId } = req.params;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "Aucun fichier envoyé" });
+    }
+
+    const boat = await Boat.findByPk(boatId);
+    if (!boat) {
+      if (!isProduction) req.files.forEach((f) => f.path && fs.unlinkSync(f.path));
+      return res.status(404).json({ message: "Bateau introuvable" });
+    }
+
+    if (boat.userId !== req.user.id && req.user.role !== "admin") {
+      if (!isProduction) req.files.forEach((f) => f.path && fs.unlinkSync(f.path));
+      return res.status(403).json({ message: "Accès interdit : vous n'êtes pas propriétaire de ce bateau" });
+    }
+
+    // En local, on vérifie chaque fichier par ses magic bytes avant de le
+    // garder — même contrôle que pour la photo de couverture.
+    if (!isProduction) {
+      for (const file of req.files) {
+        if (!isFileSignatureValid(file.path, file.mimetype)) {
+          req.files.forEach((f) => f.path && fs.existsSync(f.path) && fs.unlinkSync(f.path));
+          return res.status(400).json({ message: "Le contenu d'un fichier ne correspond pas au type déclaré." });
+        }
+      }
+    }
+
+    const existingCount = await BoatImage.count({ where: { boatId } });
+
+    const created = await Promise.all(
+      req.files.map((file, i) => {
+        const url = isProduction ? file.path : `/uploads/boats/${file.filename}`;
+        return BoatImage.create({ boatId, url, ordre: existingCount + i });
+      })
+    );
+
+    return res.status(201).json({
+      message: "Photos ajoutées à la galerie avec succès",
+      images: created,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// Supprimer une photo de la galerie
+exports.deleteBoatGalleryImage = async (req, res) => {
+  try {
+    const { boatId, imageId } = req.params;
+
+    const boat = await Boat.findByPk(boatId);
+    if (!boat) return res.status(404).json({ message: "Bateau introuvable" });
+
+    if (boat.userId !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Accès interdit" });
+    }
+
+    const image = await BoatImage.findOne({ where: { id: imageId, boatId } });
+    if (!image) return res.status(404).json({ message: "Photo introuvable" });
+
+    if (isProduction && image.url.includes("cloudinary")) {
+      try {
+        const publicId = image.url.split("/").slice(-1)[0].split(".")[0];
+        await cloudinary.uploader.destroy(`sailingloc/boats/${publicId}`);
+      } catch {
+        // Pas bloquant
+      }
+    } else if (!isProduction) {
+      const resolvedPath = path.join(__dirname, "../../", image.url);
+      const boatsDir = path.join(__dirname, "../../uploads/boats");
+      if (resolvedPath.startsWith(boatsDir) && fs.existsSync(resolvedPath)) {
+        fs.unlinkSync(resolvedPath);
+      }
+    }
+
+    await image.destroy();
+
+    return res.status(200).json({ message: "Photo supprimée avec succès" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

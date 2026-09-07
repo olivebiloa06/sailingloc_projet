@@ -33,6 +33,21 @@ const LOCATION_COORDS = {
   "Îles Baléares": { latitude: 39.5696, longitude: 2.6502 },
   "Côte amalfitaine": { latitude: 40.6333, longitude: 14.6029 },
   "Croatie": { latitude: 43.5081, longitude: 16.4402 },
+  "Toulon": { latitude: 43.1242, longitude: 5.9280 },
+  "Cannes": { latitude: 43.5528, longitude: 7.0174 },
+  "Saint-Tropez": { latitude: 43.2677, longitude: 6.6407 },
+  "Nice": { latitude: 43.7034, longitude: 7.2663 },
+  "Antibes": { latitude: 43.5804, longitude: 7.1251 },
+  "Sète": { latitude: 43.4028, longitude: 3.6967 },
+  "Biarritz": { latitude: 43.4832, longitude: -1.5586 },
+  "Saint-Malo": { latitude: 48.6497, longitude: -2.0257 },
+  "La Baule": { latitude: 47.2860, longitude: -2.3931 },
+  "Lac d'Annecy": { latitude: 45.8992, longitude: 6.1294 },
+  "Lac Léman": { latitude: 46.4312, longitude: 6.9107 },
+  "Guadeloupe": { latitude: 16.2650, longitude: -61.5510 },
+  "Martinique": { latitude: 14.6415, longitude: -61.0242 },
+  "Sardaigne": { latitude: 41.1339, longitude: 9.5225 },
+  "Costa Brava": { latitude: 41.9794, longitude: 3.2078 },
 };
 
 const OWNERS = [
@@ -72,6 +87,22 @@ const BOATS = [
 
   { ownerIndex: 3, nom: "Adriatic Wind", type: "voilier", localisation: "Croatie", description: "Voilier pour explorer les plus de 1000 îles de l'Adriatique croate.", prixJour: 240, capacite: 7, longueur: 10, avecSkipper: false },
   { ownerIndex: 3, nom: "Dalmatian Cat", type: "catamaran", localisation: "Croatie", description: "Catamaran avec skipper pour naviguer confortablement le long de la côte dalmate.", prixJour: 360, capacite: 9, longueur: 12.5, avecSkipper: true },
+
+  { ownerIndex: 0, nom: "Rade Sereine", type: "voilier", localisation: "Toulon", description: "Voilier confortable pour explorer la rade de Toulon et les îles d'Hyères.", prixJour: 185, capacite: 6, longueur: 8, avecSkipper: false },
+  { ownerIndex: 1, nom: "Croisette Prestige", type: "yacht", localisation: "Cannes", description: "Yacht avec skipper pour une sortie prestige au large de la Croisette.", prixJour: 890, capacite: 10, longueur: 13.5, avecSkipper: true },
+  { ownerIndex: 1, nom: "Pampelonne Speed", type: "bateau_moteur", localisation: "Saint-Tropez", description: "Bateau à moteur rapide pour rejoindre la plage de Pampelonne depuis le port.", prixJour: 350, capacite: 8, longueur: 8.5, avecSkipper: false },
+  { ownerIndex: 2, nom: "Baie des Anges", type: "catamaran", localisation: "Nice", description: "Catamaran spacieux avec skipper pour longer la baie des Anges en toute tranquillité.", prixJour: 340, capacite: 8, longueur: 11, avecSkipper: true },
+  { ownerIndex: 2, nom: "Cap Fun", type: "semi_rigide", localisation: "Antibes", description: "Semi-rigide maniable pour une sortie à la journée autour du Cap d'Antibes.", prixJour: 120, capacite: 5, longueur: 5.8, avecSkipper: false },
+  { ownerIndex: 0, nom: "Étang Libre", type: "voilier", localisation: "Sète", description: "Voilier léger pour naviguer entre l'étang de Thau et le large de Sète.", prixJour: 150, capacite: 5, longueur: 7.2, avecSkipper: false },
+  { ownerIndex: 3, nom: "Atlantique Surf", type: "bateau_moteur", localisation: "Biarritz", description: "Bateau à moteur pour explorer la côte basque, entre Biarritz et Saint-Jean-de-Luz.", prixJour: 260, capacite: 6, longueur: 7, avecSkipper: false },
+  { ownerIndex: 0, nom: "Corsaire Malouin", type: "voilier", localisation: "Saint-Malo", description: "Voilier robuste pour naviguer face aux remparts de Saint-Malo et vers les îles anglo-normandes.", prixJour: 195, capacite: 6, longueur: 8.8, avecSkipper: false },
+  { ownerIndex: 0, nom: "Côte d'Amour", type: "semi_rigide", localisation: "La Baule", description: "Semi-rigide léger pour une balade le long de la Côte d'Amour, entre La Baule et Le Croisic.", prixJour: 100, capacite: 4, longueur: 5, avecSkipper: false },
+  { ownerIndex: 2, nom: "Sérénité Alpine", type: "autre", localisation: "Lac d'Annecy", description: "Petite embarcation électrique pour une balade calme sur les eaux turquoise du lac d'Annecy.", prixJour: 60, capacite: 4, longueur: 4.5, avecSkipper: false },
+  { ownerIndex: 2, nom: "Vent des Alpes", type: "voilier", localisation: "Lac Léman", description: "Voilier idéal pour découvrir le Léman entre Évian et les rives suisses.", prixJour: 170, capacite: 5, longueur: 7.5, avecSkipper: false },
+  { ownerIndex: 3, nom: "Antilles Dream", type: "catamaran", localisation: "Guadeloupe", description: "Catamaran avec skipper pour explorer les Saintes et la côte guadeloupéenne.", prixJour: 400, capacite: 9, longueur: 12, avecSkipper: true },
+  { ownerIndex: 3, nom: "Créole Elegance", type: "yacht", localisation: "Martinique", description: "Yacht haut de gamme avec skipper pour une croisière d'exception autour de la Martinique.", prixJour: 1050, capacite: 10, longueur: 14.5, avecSkipper: true },
+  { ownerIndex: 1, nom: "Smeralda Chic", type: "catamaran", localisation: "Sardaigne", description: "Catamaran avec skipper pour naviguer le long de la Costa Smeralda, en Sardaigne.", prixJour: 450, capacite: 10, longueur: 13, avecSkipper: true },
+  { ownerIndex: 1, nom: "Rosas Libre", type: "voilier", localisation: "Costa Brava", description: "Voilier pour longer les criques de la Costa Brava, entre Roses et Cadaqués.", prixJour: 200, capacite: 6, longueur: 8.3, avecSkipper: false },
 ];
 
 async function seed() {

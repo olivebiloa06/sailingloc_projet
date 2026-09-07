@@ -39,6 +39,7 @@ jest.mock("../models", () => {
     },
     User: { ...createMock(mockUser), findOne: jest.fn().mockResolvedValue(null) },
     Boat: { ...createMock(mockBoat), findAll: jest.fn().mockResolvedValue([mockBoat]) },
+    BoatImage: { ...createMock({ id: 1, boatId: 1, url: "/uploads/boats/gallery-1.jpg", ordre: 0 }), count: jest.fn().mockResolvedValue(0) },
     Booking: { ...createMock(mockBooking) },
     Payment: { ...createMock({ id: 1 }) },
     Contract: { ...createMock({ id: 1, urlPdf: "contrat-1.pdf" }) },
@@ -79,6 +80,7 @@ jest.mock("../utils/tokens", () => ({
 
 jest.mock("../middlewares/uploadMiddleware", () => ({
   uploadBoatImage: { single: jest.fn().mockReturnValue((req, res, next) => next()) },
+  uploadBoatGallery: { array: jest.fn().mockReturnValue((req, res, next) => next()) },
   uploadDocument: { single: jest.fn().mockReturnValue((req, res, next) => next()) },
   BOAT_IMAGES_DIR: "/tmp/boats",
   DOCUMENTS_DIR: "/tmp/documents",

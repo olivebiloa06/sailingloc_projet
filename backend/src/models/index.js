@@ -1,6 +1,7 @@
 const sequelize = require("../config/database");
 const User = require("./User");
 const Boat = require("./Boat");
+const BoatImage = require("./BoatImage");
 const Availability = require("./Availability");
 const Booking = require("./Booking");
 const Payment = require("./Payment");
@@ -16,6 +17,10 @@ const Favorite = require("./Favorite");
 // User <-> Boat
 User.hasMany(Boat, { foreignKey: "userId", onDelete: "CASCADE" });
 Boat.belongsTo(User, { foreignKey: "userId" });
+
+// Boat <-> BoatImage (galerie photo, en plus de la couverture Boat.imageUrl)
+Boat.hasMany(BoatImage, { as: "images", foreignKey: "boatId", onDelete: "CASCADE" });
+BoatImage.belongsTo(Boat, { foreignKey: "boatId" });
 
 // Boat <-> Availability
 Boat.hasMany(Availability, { as: "availabilities", foreignKey: "boatId", onDelete: "CASCADE" });
@@ -76,7 +81,7 @@ Boat.hasMany(Favorite, { foreignKey: "boatId" });
 
 module.exports = {
   sequelize,
-  User, Boat, Availability, Booking, Payment, Review,
+  User, Boat, BoatImage, Availability, Booking, Payment, Review,
   Contract, Document, RefreshToken, Article,
   Conversation, Message, Favorite,
 };
