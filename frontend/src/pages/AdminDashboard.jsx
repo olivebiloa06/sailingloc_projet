@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api, { openFileInNewTab } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import InlineAlert from "../components/InlineAlert";
+import DashboardHeader from "../components/DashboardHeader";
 
 const CATEGORIES = [
   "Actualités nautiques",
@@ -80,7 +81,7 @@ function ArticlesPanel({ articles, onRefresh }) {
   return (
     <div className="mt-6 space-y-4">
       {showForm ? (
-        <form onSubmit={handleSave} className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
+        <form onSubmit={handleSave} className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[0_2px_10px_rgba(10,42,67,0.05)] space-y-4">
           <h3 className="font-heading text-base font-semibold text-navy">
             {editingArticle ? "Modifier l'article" : "Nouvel article"}
           </h3>
@@ -186,7 +187,7 @@ function ArticlesPanel({ articles, onRefresh }) {
 
       <div className="space-y-3">
         {articles.map((a) => (
-          <div key={a.id} className="flex items-start justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4">
+          <div key={a.id} className="flex items-start justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-sky">{a.categorie}</span>
@@ -343,28 +344,21 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold text-navy">
-            Administration SailingLoc
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">Connecté en tant qu'admin · {user?.email}</p>
-        </div>
-        <button onClick={handleLogout} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-navy">
-          Se déconnecter
-        </button>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6 px-6 py-12">
+      <DashboardHeader
+        name={user?.prenom || "Admin"}
+        subtitle={`Administration SailingLoc · ${user?.email}`}
+        onLogout={handleLogout}
+      />
 
       {/* Tabs */}
-      <div className="mt-6 flex gap-1 rounded-xl bg-cloud p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-gray-100 bg-cloud p-1 shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
+            className={`flex-1 shrink-0 rounded-xl px-3 py-2 text-sm font-semibold transition ${
               tab === t.key ? "bg-white text-navy shadow-sm" : "text-gray-500 hover:text-navy"
             }`}
           >
@@ -373,13 +367,13 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <InlineAlert message={actionError} onDismiss={() => setActionError("")} className="mt-6" />
+      <InlineAlert message={actionError} onDismiss={() => setActionError("")} />
 
       {loading && <p className="mt-8 text-sm text-gray-500">Chargement...</p>}
 
       {/* Onglet KPIs */}
       {!loading && tab === "kpi" && stats && (
-        <div className="mt-6 space-y-6">
+        <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
               { label: "Utilisateurs", value: stats.totalUsers, sub: `${stats.locataires} locataires · ${stats.proprietaires} propriétaires` },
@@ -387,20 +381,20 @@ export default function AdminDashboard() {
               { label: "Chiffre d'affaires", value: `${stats.totalCA} €`, sub: "Transactions confirmées" },
               { label: "Commission (10%)", value: `${stats.totalCommission} €`, sub: "Revenus SailingLoc" },
             ].map((kpi) => (
-              <div key={kpi.label} className="rounded-xl border border-gray-200 bg-white p-4">
+              <div key={kpi.label} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
                 <p className="text-xs font-semibold text-gray-500">{kpi.label}</p>
-                <p className="mt-1 text-2xl font-semibold text-navy">{kpi.value}</p>
+                <p className="mt-1 font-heading text-2xl font-semibold text-navy">{kpi.value}</p>
                 <p className="mt-1 text-xs text-gray-400">{kpi.sub}</p>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Link to="/mes-bateaux" className="rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
+            <Link to="/mes-bateaux" className="rounded-2xl border border-gray-100 bg-white p-4 text-sm font-medium text-navy shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition hover:-translate-y-0.5 hover:border-sky/40 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
               Gérer les bateaux
               <span className="mt-1 block text-xs font-normal text-gray-400">Voir et modérer toutes les annonces</span>
             </Link>
-            <Link to="/demandes" className="rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
+            <Link to="/demandes" className="rounded-2xl border border-gray-100 bg-white p-4 text-sm font-medium text-navy shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition hover:-translate-y-0.5 hover:border-sky/40 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
               Toutes les réservations
               <span className="mt-1 block text-xs font-normal text-gray-400">Superviser et intervenir en cas de litige</span>
             </Link>
@@ -410,12 +404,12 @@ export default function AdminDashboard() {
 
       {/* Onglet Documents */}
       {!loading && tab === "docs" && (
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           {pendingDocs.length === 0 && (
             <p className="text-sm text-gray-500">Aucun document en attente.</p>
           )}
           {pendingDocs.map((doc) => (
-            <div key={doc.id} className="rounded-xl border border-gray-200 bg-white p-4">
+            <div key={doc.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-heading text-sm font-semibold text-navy">
@@ -450,7 +444,7 @@ export default function AdminDashboard() {
 
       {/* Onglet Transactions */}
       {!loading && tab === "payments" && (
-        <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
           <table className="w-full text-sm">
             <thead className="bg-cloud text-xs font-semibold text-gray-500">
               <tr>
@@ -487,10 +481,10 @@ export default function AdminDashboard() {
 
       {/* Onglet Avis — modération */}
       {!loading && tab === "reviews" && (
-        <div className="mt-6 space-y-3">
+        <div className="space-y-3">
           {reviews.length === 0 && <p className="text-sm text-gray-500">Aucun avis pour l'instant.</p>}
           {reviews.map((r) => (
-            <div key={r.id} className="flex items-start justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4">
+            <div key={r.id} className="flex items-start justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-navy">{r.User?.prenom} {r.User?.nom}</span>
@@ -518,8 +512,8 @@ export default function AdminDashboard() {
 
       {/* Onglet Utilisateurs */}
       {!loading && tab === "users" && (
-        <div className="mt-6">
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div>
+          <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
             <table className="w-full text-sm">
               <thead className="bg-cloud text-xs font-semibold text-gray-500">
                 <tr>
