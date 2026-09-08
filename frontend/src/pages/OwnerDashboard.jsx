@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import InlineAlert from "../components/InlineAlert";
+import DashboardHeader from "../components/DashboardHeader";
 
 const DOC_TYPES = [
   { value: "piece_identite", label: "Pièce d'identité" },
@@ -112,46 +113,39 @@ export default function OwnerDashboard() {
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-12 space-y-10">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold text-navy">
-            Bonjour, {user?.prenom} 👋
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">Propriétaire · {user?.email}</p>
-        </div>
-        <button onClick={handleLogout} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-navy hover:text-navy">
-          Se déconnecter
-        </button>
-      </div>
+      <DashboardHeader
+        name={user?.prenom}
+        subtitle={`Propriétaire · ${user?.email}`}
+        onLogout={handleLogout}
+      />
 
       {/* KPIs revenus */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-          <p className="text-2xl font-semibold text-navy">{confirmedBookings.length}</p>
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
+          <p className="font-heading text-2xl font-semibold text-navy">{confirmedBookings.length}</p>
           <p className="mt-1 text-xs text-gray-500">Locations confirmées</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-          <p className="text-2xl font-semibold text-green-600">{totalRevenue.toFixed(0)} €</p>
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
+          <p className="font-heading text-2xl font-semibold text-green-600">{totalRevenue.toFixed(0)} €</p>
           <p className="mt-1 text-xs text-gray-500">Revenus nets</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
-          <p className="text-2xl font-semibold text-gray-700">{totalCommission.toFixed(0)} €</p>
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
+          <p className="font-heading text-2xl font-semibold text-gray-700">{totalCommission.toFixed(0)} €</p>
           <p className="mt-1 text-xs text-gray-500">Commission SailingLoc (10%)</p>
         </div>
       </div>
 
       {/* Actions rapides */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Link to="/mes-bateaux" className="rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
+        <Link to="/mes-bateaux" className="rounded-2xl border border-gray-100 bg-white p-4 text-sm font-medium text-navy shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition hover:-translate-y-0.5 hover:border-sky/40 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
           Mes bateaux
           <span className="mt-1 block text-xs font-normal text-gray-400">Gérer annonces et disponibilités</span>
         </Link>
-        <Link to="/mes-bateaux/nouveau" className="rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
+        <Link to="/mes-bateaux/nouveau" className="rounded-2xl border border-gray-100 bg-white p-4 text-sm font-medium text-navy shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition hover:-translate-y-0.5 hover:border-sky/40 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
           + Ajouter un bateau
           <span className="mt-1 block text-xs font-normal text-gray-400">Publier une nouvelle annonce</span>
         </Link>
-        <Link to="/demandes" className="relative rounded-xl border border-gray-200 bg-white p-4 text-sm font-medium text-navy hover:border-sky hover:shadow-sm">
+        <Link to="/demandes" className="relative rounded-2xl border border-gray-100 bg-white p-4 text-sm font-medium text-navy shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition hover:-translate-y-0.5 hover:border-sky/40 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
           Demandes reçues
           {pending.length > 0 && (
             <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
@@ -171,7 +165,7 @@ export default function OwnerDashboard() {
           <InlineAlert message={respondError} onDismiss={() => setRespondError("")} className="mt-3" />
           <div className="mt-4 space-y-3">
             {pending.map((b) => (
-              <div key={b.id} className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <div key={b.id} className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-[0_2px_10px_rgba(217,158,44,0.08)]">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-semibold text-navy">{b.Boat?.nom}</p>
@@ -198,7 +192,7 @@ export default function OwnerDashboard() {
       {confirmedBookings.length > 0 && (
         <div>
           <h2 className="font-heading text-lg font-semibold text-navy">Historique des transactions</h2>
-          <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
             <table className="w-full text-sm">
               <thead className="bg-cloud text-xs font-semibold text-gray-500">
                 <tr>
@@ -238,7 +232,7 @@ export default function OwnerDashboard() {
           {documents.map((doc) => {
             const s = STATUS_LABELS[doc.statutValidation] || STATUS_LABELS.en_attente;
             return (
-              <div key={doc.id} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm">
+              <div key={doc.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm shadow-[0_1px_4px_rgba(10,42,67,0.04)]">
                 <span className="font-medium text-navy">{doc.nom}</span>
                 <span className={`text-xs font-semibold ${s.className}`}>{s.label}</span>
               </div>
@@ -249,7 +243,7 @@ export default function OwnerDashboard() {
           )}
         </div>
 
-        <form onSubmit={uploadDoc} className="mt-4 grid grid-cols-2 gap-2 rounded-xl border border-gray-200 bg-white p-4">
+        <form onSubmit={uploadDoc} className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_2px_10px_rgba(10,42,67,0.05)]">
           {docError && <p className="col-span-2 text-xs text-red-600">{docError}</p>}
           <select
             value={docForm.type}

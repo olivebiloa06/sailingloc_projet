@@ -6,6 +6,7 @@ import { isValidEmail, getPasswordStrengthError } from "../utils/validators";
 import { usePageMeta } from "../hooks/usePageMeta";
 import PasswordInput from "../components/PasswordInput";
 import GoogleLoginButton from "../components/GoogleLoginButton";
+import AuthSidePanel from "../components/AuthSidePanel";
 
 const OWNER_REQUIRED_DOCS = [
   { key: "piece_identite", label: "Pièce d'identité", hint: "Carte nationale d'identité ou passeport (PDF, JPG, PNG)" },
@@ -50,39 +51,42 @@ function OwnerDocumentsStep({ onComplete }) {
 
   return (
     <div className="flex min-h-screen">
-      <div className="relative hidden w-1/2 flex-col justify-between bg-navy p-12 text-white lg:flex">
-        <Link to="/" className="font-heading text-2xl font-semibold">SailingLoc</Link>
-        <div>
-          <h1 className="font-heading text-4xl font-semibold leading-tight">Dernière étape.</h1>
-          <p className="mt-4 max-w-md text-white/70">Pour sécuriser notre communauté, nous vérifions l'identité de chaque propriétaire avant la mise en ligne de ses annonces.</p>
-        </div>
-        <p className="text-sm text-white/50">© 2026 SailingLoc — Agence Pandawan</p>
-      </div>
+      <AuthSidePanel
+        title="Dernière étape."
+        text="Pour sécuriser notre communauté, nous vérifions l'identité de chaque propriétaire avant la mise en ligne de ses annonces."
+      />
       <div className="flex w-full flex-col items-center justify-center bg-cloud px-6 py-12 lg:w-1/2">
         <div className="w-full max-w-sm">
-          <h2 className="font-heading text-2xl font-semibold text-navy">Documents requis</h2>
-          <p className="mt-1 text-sm text-gray-500">Ces documents sont transmis à notre équipe pour validation. Ton compte est actif immédiatement, mais tes annonces seront visibles après validation (généralement sous 24h).</p>
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
-            {globalError && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
-            {OWNER_REQUIRED_DOCS.map(({ key, label, hint }) => (
-              <div key={key}>
-                <label className="mb-1 block text-sm font-medium text-navy">{label}</label>
-                <p className="mb-2 text-xs text-gray-400">{hint}</p>
-                <input type="file" accept="application/pdf,image/jpeg,image/png"
-                  onChange={(e) => handleFile(key, e.target.files?.[0] || null)}
-                  className="w-full text-sm text-gray-600" />
-                {errors[key] && <p className="mt-1 text-xs text-red-600">{errors[key]}</p>}
-              </div>
-            ))}
-            <button type="submit" disabled={uploading}
-              className="w-full rounded-lg bg-navy py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-60">
-              {uploading ? "Envoi en cours..." : "Envoyer les documents"}
-            </button>
-            <button type="button" onClick={onComplete}
-              className="w-full text-center text-xs text-gray-400 hover:text-gray-600">
-              Passer pour l'instant (tu pourras les ajouter plus tard)
-            </button>
-          </form>
+          <Link to="/" className="mb-8 block text-center font-heading text-2xl font-semibold text-navy lg:hidden">SailingLoc</Link>
+          <div className="rounded-2xl bg-white p-7 shadow-[0_2px_20px_rgba(10,42,67,0.08)] sm:p-8 lg:shadow-[0_10px_35px_-10px_rgba(10,42,67,0.18)]">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky/10 text-[10px]">2/2</span>
+              Vérification propriétaire
+            </span>
+            <h2 className="mt-3 font-heading text-2xl font-semibold text-navy">Documents requis</h2>
+            <p className="mt-1 text-sm text-gray-500">Ces documents sont transmis à notre équipe pour validation. Ton compte est actif immédiatement, mais tes annonces seront visibles après validation (généralement sous 24h).</p>
+            <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
+              {globalError && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{globalError}</div>}
+              {OWNER_REQUIRED_DOCS.map(({ key, label, hint }) => (
+                <div key={key}>
+                  <label className="mb-1 block text-sm font-medium text-navy">{label}</label>
+                  <p className="mb-2 text-xs text-gray-400">{hint}</p>
+                  <input type="file" accept="application/pdf,image/jpeg,image/png"
+                    onChange={(e) => handleFile(key, e.target.files?.[0] || null)}
+                    className="w-full text-sm text-gray-600" />
+                  {errors[key] && <p className="mt-1 text-xs text-red-600">{errors[key]}</p>}
+                </div>
+              ))}
+              <button type="submit" disabled={uploading}
+                className="w-full rounded-lg bg-navy py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-60">
+                {uploading ? "Envoi en cours..." : "Envoyer les documents"}
+              </button>
+              <button type="button" onClick={onComplete}
+                className="w-full text-center text-xs text-gray-400 hover:text-gray-600">
+                Passer pour l'instant (tu pourras les ajouter plus tard)
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -141,78 +145,86 @@ export default function Register() {
 
   return (
     <div className="flex min-h-screen">
-      <div className="relative hidden w-1/2 flex-col justify-between bg-navy p-12 text-white lg:flex">
-        <Link to="/" className="font-heading text-2xl font-semibold">SailingLoc</Link>
-        <div>
-          <h1 className="font-heading text-4xl font-semibold leading-tight">Rejoins l'aventure<br />en mer.</h1>
-          <p className="mt-4 max-w-md text-white/70">Crée ton compte pour réserver ton prochain bateau, ou pour mettre le tien en location.</p>
-        </div>
-        <p className="text-sm text-white/50">© 2026 SailingLoc — Agence Pandawan</p>
-      </div>
+      <AuthSidePanel
+        title={<>Rejoins l'aventure<br />en mer.</>}
+        text="Crée ton compte pour réserver ton prochain bateau, ou pour mettre le tien en location."
+      />
       <div className="flex w-full flex-col items-center justify-center bg-cloud px-6 py-12 lg:w-1/2">
         <div className="w-full max-w-sm">
-          <Link to="/" className="mb-8 block font-heading text-2xl font-semibold text-navy lg:hidden">SailingLoc</Link>
-          <h2 className="font-heading text-2xl font-semibold text-navy">Créer un compte</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Déjà inscrit ?{" "}
-            <Link to="/login" className="font-medium text-sky hover:underline">Connecte-toi</Link>
-          </p>
-          <div className="mt-8">
-            <GoogleLoginButton
-              onSuccess={() => navigate("/", { replace: true })}
-              onError={setServerError}
-            />
-          </div>
+          <Link to="/" className="mb-8 block text-center font-heading text-2xl font-semibold text-navy lg:hidden">SailingLoc</Link>
 
-          <form onSubmit={handleSubmit} className="mt-5 space-y-5" noValidate>
-            {serverError && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</div>}
-            <div>
-              <span className="mb-1 block text-sm font-medium text-navy">Je m'inscris en tant que</span>
+          <div className="rounded-2xl bg-white p-7 shadow-[0_2px_20px_rgba(10,42,67,0.08)] sm:p-8 lg:shadow-[0_10px_35px_-10px_rgba(10,42,67,0.18)]">
+            <h2 className="font-heading text-2xl font-semibold text-navy">Créer un compte</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Déjà inscrit ?{" "}
+              <Link to="/login" className="font-medium text-sky hover:underline">Connecte-toi</Link>
+            </p>
+            <div className="mt-8">
+              <GoogleLoginButton
+                onSuccess={() => navigate("/", { replace: true })}
+                onError={setServerError}
+              />
+            </div>
+
+            <div className="my-5 flex items-center gap-3 text-xs text-gray-400">
+              <span className="h-px flex-1 bg-gray-200" />ou<span className="h-px flex-1 bg-gray-200" />
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              {serverError && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</div>}
+              <div>
+                <span className="mb-1 block text-sm font-medium text-navy">Je m'inscris en tant que</span>
+                <div className="grid grid-cols-2 gap-3">
+                  {["locataire", "proprietaire"].map((role) => (
+                    <button key={role} type="button" onClick={() => selectRole(role)}
+                      className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${form.role === role ? "border-navy bg-navy text-white" : "border-gray-300 text-gray-600 hover:border-navy/40"}`}>
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </button>
+                  ))}
+                </div>
+                {form.role === "proprietaire" && (
+                  <p className="mt-2 text-xs text-amber-600">Des documents d'identité et d'assurance vous seront demandés à l'étape suivante.</p>
+                )}
+              </div>
               <div className="grid grid-cols-2 gap-3">
-                {["locataire", "proprietaire"].map((role) => (
-                  <button key={role} type="button" onClick={() => selectRole(role)}
-                    className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${form.role === role ? "border-navy bg-navy text-white" : "border-gray-300 text-gray-600 hover:border-navy/40"}`}>
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
-                  </button>
+                {[{ key: "prenom", label: "Prénom" }, { key: "nom", label: "Nom" }].map(({ key: field, label }) => (
+                  <div key={field}>
+                    <label htmlFor={field} className="mb-1 block text-sm font-medium text-navy">
+                      {label}
+                    </label>
+                    <input id={field} name={field} value={form[field]} onChange={handleChange}
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30" />
+                    {errors[field] && <p className="mt-1 text-xs text-red-600">{errors[field]}</p>}
+                  </div>
                 ))}
               </div>
-              {form.role === "proprietaire" && (
-                <p className="mt-2 text-xs text-amber-600">Des documents d'identité et d'assurance vous seront demandés à l'étape suivante.</p>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[{ key: "prenom", label: "Prénom" }, { key: "nom", label: "Nom" }].map(({ key: field, label }) => (
-                <div key={field}>
-                  <label htmlFor={field} className="mb-1 block text-sm font-medium text-navy">
-                    {label}
-                  </label>
-                  <input id={field} name={field} value={form[field]} onChange={handleChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30" />
-                  {errors[field] && <p className="mt-1 text-xs text-red-600">{errors[field]}</p>}
-                </div>
-              ))}
-            </div>
-            <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-medium text-navy">Adresse email</label>
-              <input id="email" name="email" type="email" autoComplete="email" value={form.email} onChange={handleChange}
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30" />
-              {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
-            </div>
-            <div>
-              <label htmlFor="motDePasse" className="mb-1 block text-sm font-medium text-navy">Mot de passe</label>
-              <PasswordInput id="motDePasse" name="motDePasse" autoComplete="new-password" value={form.motDePasse} onChange={handleChange} />
-              {errors.motDePasse && <p className="mt-1 text-xs text-red-600">{errors.motDePasse}</p>}
-            </div>
-            <div>
-              <label htmlFor="confirmation" className="mb-1 block text-sm font-medium text-navy">Confirmer le mot de passe</label>
-              <PasswordInput id="confirmation" name="confirmation" autoComplete="new-password" value={form.confirmation} onChange={handleChange} />
-              {errors.confirmation && <p className="mt-1 text-xs text-red-600">{errors.confirmation}</p>}
-            </div>
-            <button type="submit" disabled={submitting}
-              className="w-full rounded-lg bg-navy py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-60">
-              {submitting ? "Création du compte..." : "Créer mon compte"}
-            </button>
-          </form>
+              <div>
+                <label htmlFor="email" className="mb-1 block text-sm font-medium text-navy">Adresse email</label>
+                <input id="email" name="email" type="email" autoComplete="email" value={form.email} onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/30" />
+                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+              </div>
+              <div>
+                <label htmlFor="motDePasse" className="mb-1 block text-sm font-medium text-navy">Mot de passe</label>
+                <PasswordInput id="motDePasse" name="motDePasse" autoComplete="new-password" value={form.motDePasse} onChange={handleChange} />
+                {errors.motDePasse && <p className="mt-1 text-xs text-red-600">{errors.motDePasse}</p>}
+              </div>
+              <div>
+                <label htmlFor="confirmation" className="mb-1 block text-sm font-medium text-navy">Confirmer le mot de passe</label>
+                <PasswordInput id="confirmation" name="confirmation" autoComplete="new-password" value={form.confirmation} onChange={handleChange} />
+                {errors.confirmation && <p className="mt-1 text-xs text-red-600">{errors.confirmation}</p>}
+              </div>
+              <button type="submit" disabled={submitting}
+                className="w-full rounded-lg bg-navy py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light disabled:opacity-60">
+                {submitting ? "Création du compte..." : "Créer mon compte"}
+              </button>
+              <p className="text-center text-xs text-gray-400">
+                En créant un compte, tu acceptes nos{" "}
+                <Link to="/cgu" className="underline hover:text-gray-600">CGU</Link> et notre{" "}
+                <Link to="/confidentialite" className="underline hover:text-gray-600">politique de confidentialité</Link>.
+              </p>
+            </form>
+          </div>
         </div>
       </div>
     </div>

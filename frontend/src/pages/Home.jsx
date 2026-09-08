@@ -130,6 +130,91 @@ function DestinationCard({ title, tagline, gradient, coords, to, img }) {
   );
 }
 
+const TRUST_ITEMS = [
+  {
+    title: "Bateaux vérifiés",
+    text: "Chaque annonce et chaque propriétaire sont contrôlés avant publication.",
+    to: "/securite",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" />
+        <path d="M9 12.2l2 2 4-4.2" />
+      </svg>
+    ),
+  },
+  {
+    title: "Paiement 100% sécurisé",
+    text: "Tes fonds sont protégés jusqu'au départ, via un paiement en ligne chiffré.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4.5" y="10.5" width="15" height="9" rx="2" />
+        <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+      </svg>
+    ),
+  },
+  {
+    title: "Propriétaires assurés",
+    text: "Assurance responsabilité civile obligatoire, vérifiée par notre équipe avant chaque publication.",
+    to: "/assurance",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 4v16M4 12h16" />
+      </svg>
+    ),
+  },
+  {
+    title: "Support réactif 7j/7",
+    text: "Une question avant, pendant ou après la location ? L'équipe te répond vite.",
+    to: "/aide",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 13a8 8 0 0 1 16 0" />
+        <path d="M4 13v4a2 2 0 0 0 2 2h1v-6H5a1 1 0 0 0-1 1Z" />
+        <path d="M20 13v4a2 2 0 0 1-2 2h-1v-6h1a1 1 0 0 1 1 1Z" />
+      </svg>
+    ),
+  },
+];
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 10.5l3.5 3.5L16 5.5" />
+    </svg>
+  );
+}
+
+function TrustBadge({ icon, title, text, to }) {
+  const inner = (
+    <>
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sky/10 text-sky">
+        {icon}
+      </div>
+      <h3 className="mt-4 font-heading text-base font-semibold text-navy">{title}</h3>
+      <p className="mt-1.5 text-sm leading-relaxed text-gray-500">{text}</p>
+    </>
+  );
+  if (!to) {
+    return (
+      <div className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_1px_4px_rgba(10,42,67,0.04)]">
+        {inner}
+      </div>
+    );
+  }
+  return (
+    <Link
+      to={to}
+      className="group flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-[0_1px_4px_rgba(10,42,67,0.04)] transition duration-300 hover:-translate-y-1 hover:border-sky/30 hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]"
+    >
+      {inner}
+      <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-sky opacity-0 transition group-hover:opacity-100">
+        En savoir plus →
+      </span>
+    </Link>
+  );
+}
+
 function Kicker({ children, tone = "text-sky" }) {
   return (
     <span className={`inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] ${tone}`}>
@@ -213,21 +298,60 @@ export default function Home() {
             <span className="h-px w-6 bg-sable" />SailingLoc<span className="h-px w-6 bg-sable" />
           </span>
           <h1 className="mt-5 animate-fade-up font-heading text-4xl font-semibold tracking-tight leading-tight sm:text-6xl" style={{ animationDelay: "80ms" }}>
-            Explore la mer autrement.
+            Explore la mer <span className="text-sable">autrement</span>.
           </h1>
           <p className="mt-5 max-w-xl animate-fade-up text-lg text-white/70" style={{ animationDelay: "150ms" }}>
             Loue un voilier, un catamaran ou un bateau à moteur directement auprès d'un particulier, partout en France et au-delà.
           </p>
-          <Link
-            to="/boats"
-            className="mt-10 animate-fade-up rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-navy shadow-lg transition hover:scale-105 hover:bg-cloud"
-            style={{ animationDelay: "300ms" }}
-          >
-            Réserver
-          </Link>
+
+          <div className="mt-10 flex animate-fade-up flex-col items-center gap-4 sm:flex-row" style={{ animationDelay: "300ms" }}>
+            <Link
+              to="/boats"
+              className="rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-navy shadow-lg transition hover:scale-105 hover:bg-cloud"
+            >
+              Réserver un bateau
+            </Link>
+            <Link
+              to="/register?role=proprietaire"
+              className="rounded-full border border-white/40 px-8 py-3.5 text-sm font-semibold text-white transition hover:scale-105 hover:border-white hover:bg-white/10"
+            >
+              Louer mon bateau
+            </Link>
+          </div>
+
+          <div className="mt-8 flex animate-fade-up flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-white/70" style={{ animationDelay: "380ms" }}>
+            <span className="inline-flex items-center gap-1.5 text-sable"><CheckIcon /><span className="text-white/70">Paiement 100% sécurisé</span></span>
+            <span className="inline-flex items-center gap-1.5 text-sable"><CheckIcon /><span className="text-white/70">Annulation flexible</span></span>
+            <span className="inline-flex items-center gap-1.5 text-sable"><CheckIcon /><span className="text-white/70">Propriétaires vérifiés</span></span>
+          </div>
         </div>
 
+        <a
+          href="#pourquoi-sailingloc"
+          aria-label="Découvrir SailingLoc"
+          className="absolute bottom-24 left-1/2 z-10 hidden -translate-x-1/2 animate-bounce text-white/60 transition hover:text-white sm:block"
+        >
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </a>
+
         <HorizonDivider fill="white" className="absolute bottom-0 left-0 z-[1]" />
+      </section>
+
+      {/* POURQUOI SAILINGLOC — réassurance immédiate pour un nouvel utilisateur */}
+      <section id="pourquoi-sailingloc" className="bg-white py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal>
+            <Kicker>Voyager en confiance</Kicker>
+            <h2 className="mt-3 font-heading text-2xl font-semibold tracking-tight text-navy sm:text-3xl">Pourquoi choisir SailingLoc</h2>
+          </Reveal>
+          <Reveal delay={100} className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {TRUST_ITEMS.map((item) => (
+              <TrustBadge key={item.title} {...item} />
+            ))}
+          </Reveal>
+        </div>
       </section>
 
       {/* EXPÉRIENCE OU NAVIGATION */}

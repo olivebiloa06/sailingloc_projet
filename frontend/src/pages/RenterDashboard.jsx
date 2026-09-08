@@ -6,6 +6,7 @@ import { resolveImageUrl } from "../utils/assets";
 import { boatAltText } from "../utils/boatAlt";
 import BoatMark from "../components/BoatMark";
 import InlineAlert from "../components/InlineAlert";
+import DashboardHeader from "../components/DashboardHeader";
 
 const STATUS_STYLES = {
   en_attente: { label: "En attente", className: "bg-amber-50 text-amber-700" },
@@ -133,7 +134,7 @@ export default function RenterDashboard() {
   const handleLogout = async () => { navigate("/", { replace: true }); await logout(); };
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl space-y-8 px-6 py-12">
       {reviewBooking && (
         <ReviewModal
           booking={reviewBooking}
@@ -142,28 +143,28 @@ export default function RenterDashboard() {
         />
       )}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-2xl font-semibold text-navy">
-            Bonjour, {user?.prenom} 👋
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">Locataire · {user?.email}</p>
-        </div>
-        <button onClick={handleLogout} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-navy hover:text-navy">
-          Se déconnecter
-        </button>
-      </div>
+      <DashboardHeader
+        name={user?.prenom}
+        subtitle={`Locataire · ${user?.email}`}
+        onLogout={handleLogout}
+      />
 
-      <InlineAlert message={contractError} onDismiss={() => setContractError("")} className="mt-6" />
+      <InlineAlert message={contractError} onDismiss={() => setContractError("")} />
 
-      <div className="mt-8">
-        <h2 className="font-heading text-lg font-semibold text-navy">Mes réservations</h2>
+      <div>
+        <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky">
+          <span className="h-px w-6 bg-current" />Suivi
+        </span>
+        <h2 className="mt-2 font-heading text-lg font-semibold text-navy">Mes réservations</h2>
+
         {loading && <p className="mt-4 text-sm text-gray-500">Chargement...</p>}
         {!loading && bookings.length === 0 && (
-          <p className="mt-4 text-sm text-gray-500">
-            Aucune réservation.{" "}
-            <Link to="/boats" className="font-medium text-sky">Trouver un bateau →</Link>
-          </p>
+          <div className="mt-4 rounded-2xl border border-dashed border-gray-200 bg-cloud/60 p-8 text-center">
+            <p className="text-sm text-gray-500">Tu n'as pas encore de réservation.</p>
+            <Link to="/boats" className="mt-3 inline-block rounded-full bg-navy px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-light">
+              Trouver un bateau →
+            </Link>
+          </div>
         )}
 
         <div className="mt-4 space-y-3">
@@ -174,7 +175,7 @@ export default function RenterDashboard() {
             const canReview = b.statut === "confirmee" || b.statut === "terminee";
 
             return (
-              <div key={b.id} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4">
+              <div key={b.id} className="flex gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_2px_10px_rgba(10,42,67,0.05)] transition hover:shadow-[0_8px_20px_-10px_rgba(10,42,67,0.2)]">
                 <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-navy to-sky">
                   {img ? <img src={img} alt={boatAltText(boat)} className="h-full w-full object-cover" /> : (
                     <div className="flex h-full items-center justify-center"><BoatMark className="h-6 w-6 text-white/40" /></div>
