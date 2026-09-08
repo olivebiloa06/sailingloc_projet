@@ -75,10 +75,6 @@ export default function Login() {
               />
             </div>
 
-            <div className="my-5 flex items-center gap-3 text-xs text-gray-400">
-              <span className="h-px flex-1 bg-gray-200" />ou<span className="h-px flex-1 bg-gray-200" />
-            </div>
-
             <form onSubmit={handleSubmit} className="space-y-5" noValidate>
               {serverError && (
                 <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</div>
