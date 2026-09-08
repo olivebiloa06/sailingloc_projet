@@ -12,7 +12,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const morgan = require("morgan");
 
-const { sequelize } = require("./models");
+const { sequelize, BoatImage } = require("./models");
 const paymentController = require("./controllers/paymentController");
 
 const adminRoutes = require("./routes/adminRoutes");
@@ -140,7 +140,12 @@ const startServer = async () => {
   await sequelize.sync({ alter: true });
   console.log("Tables synchronisées avec PostgreSQL (mode développement).");
 } else {
-  console.log("Mode production : sync désactivé.");
+  // Sync désactivé en production pour éviter les ALTER TABLE non voulus,
+  // mais on crée quand même les tables manquantes pour les nouveaux modèles
+  // (sync() sans alter ne fait un CREATE TABLE que si la table n'existe pas,
+  // il ne touche pas aux tables déjà présentes).
+  await BoatImage.sync();
+  console.log("Mode production : sync désactivé (tables manquantes créées si besoin).");
 }
 
     httpServer.listen(PORT, () => {
