@@ -24,7 +24,7 @@ import { UserIcon, CalendarIcon, ChatIcon, ShieldIcon, LogoutIcon } from "./Acco
 import { usePublishBoatLink } from "../hooks/usePublishBoatLink";
 
 
-const getDecouvrirMenu = (publishBoatLink) => [
+const getDecouvrirMenu = (publishBoatLink, t) => [
   {
     section: "Louer un bateau",
     items: [
@@ -49,14 +49,14 @@ const getDecouvrirMenu = (publishBoatLink) => [
     section: "Pour les propriétaires",
     items: [
       { to: publishBoatLink, label: "Mettre mon bateau en location", icon: MegaphoneIcon, desc: "Publie ton annonce gratuitement" },
-      { to: "/mon-compte", label: "Gérer mes annonces", icon: ClipboardIcon, desc: "Disponibilités, réservations, revenus" },
+      { to: "/mon-compte", label: t("monCompte"), icon: ClipboardIcon, desc: "Disponibilités, réservations, revenus" },
     ],
   },
   {
     section: "Découverte & guides",
     items: [
-      { to: "/inspiration", label: "Inspiration", icon: CompassIcon, desc: "Actualités nautiques & guides de voyage" },
-      { to: "/a-propos", label: "À propos de SailingLoc", icon: InfoIcon, desc: "Notre mission, notre équipe" },
+      { to: "/inspiration", label: t("inspiration"), icon: CompassIcon, desc: "Actualités nautiques & guides de voyage" },
+      { to: "/a-propos", label: t("apropos"), icon: InfoIcon, desc: "Notre mission, notre équipe" },
     ],
   },
 ];
@@ -66,7 +66,8 @@ function DecouvrirDropdown() {
   const ref = useRef(null);
   const btnRef = useRef(null);
   const publishBoatLink = usePublishBoatLink();
-  const decouvrirMenu = getDecouvrirMenu(publishBoatLink);
+  const { t } = useLanguageCurrency();
+  const decouvrirMenu = getDecouvrirMenu(publishBoatLink, t);
 
   useEffect(() => {
     const handler = (e) => {
@@ -94,7 +95,7 @@ function DecouvrirDropdown() {
         aria-controls="decouvrir-menu"
         className={`flex items-center gap-1.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded ${open ? "text-navy" : "text-gray-600 hover:text-navy"}`}
       >
-        Découvrir
+        {t("decouvrir")}
         <svg viewBox="0 0 20 20" className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} fill="currentColor" aria-hidden="true" focusable="false">
           <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
         </svg>
@@ -145,6 +146,7 @@ function DecouvrirDropdown() {
 
 function AccountLink() {
   const { user, logout } = useAuth();
+  const { t } = useLanguageCurrency();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -153,11 +155,6 @@ function AccountLink() {
   const handleLogout = async () => {
     setOpen(false);
     await logout();
-    // replace: true — la page protégée où l'utilisateur se trouvait ne doit
-    // plus être accessible via le bouton "précédent" du navigateur une fois
-    // déconnecté (sécurité). Voir aussi le garde-fou dans ProtectedRoute :
-    // si l'historique remonte quand même plus loin sur une autre page
-    // protégée, elle renvoie vers /login plutôt que d'afficher son contenu.
     navigate("/", { replace: true });
   };
 
@@ -186,7 +183,7 @@ function AccountLink() {
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
           <circle cx="12" cy="7" r="4" />
         </svg>
-        Connexion
+        {t("connexion")}
       </Link>
     );
   }
@@ -236,11 +233,11 @@ function AccountLink() {
           </div>
           <div className="p-2">
             {[
-              { to: "/mon-compte", label: "Mon compte", icon: UserIcon, show: true },
-              { to: "/mes-bateaux", label: "Mes bateaux", icon: BoatMark, show: user.role === "proprietaire" },
-              { to: "/mes-reservations", label: "Mes réservations", icon: CalendarIcon, show: user.role !== "admin" },
-              { to: "/mes-messages", label: "Messages", icon: ChatIcon, show: true },
-              { to: "/admin/documents", label: "Administration", icon: ShieldIcon, show: user.role === "admin", className: "text-sky" },
+              { to: "/mon-compte", label: t("monCompte"), icon: UserIcon, show: true },
+              { to: "/mes-bateaux", label: t("mesBateaux"), icon: BoatMark, show: user.role === "proprietaire" },
+              { to: "/mes-reservations", label: t("mesReservations"), icon: CalendarIcon, show: user.role !== "admin" },
+              { to: "/mes-messages", label: t("messages"), icon: ChatIcon, show: true },
+              { to: "/admin/documents", label: t("administration"), icon: ShieldIcon, show: user.role === "admin", className: "text-sky" },
             ].filter((l) => l.show).map((l) => (
               <Link
                 key={l.to}
@@ -263,7 +260,7 @@ function AccountLink() {
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-gray-700 hover:bg-cloud focus:outline-none focus:ring-2 focus:ring-sky"
             >
               <LogoutIcon className="h-4 w-4 shrink-0" />
-              Déconnexion
+              {t("deconnexion")}
             </button>
           </div>
         </div>
@@ -346,10 +343,8 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { t } = useLanguageCurrency();
   const navigate = useNavigate();
-  // L'admin gère la plateforme, il n'a rien à faire des outils de recherche
-  // et de découverte destinés aux locataires/propriétaires (filtres
-  // destination/date, menu Découvrir, pages marketing...).
   const isAdmin = user?.role === "admin";
 
   useEffect(() => {
@@ -362,22 +357,18 @@ export default function Header() {
   const handleMobileLogout = async () => {
     setMobileOpen(false);
     await logout();
-    // replace: true — voir le commentaire équivalent dans AccountLink.handleLogout.
     navigate("/", { replace: true });
   };
 
-  // Miroir de AccountLink (menu desktop) : mêmes liens selon le rôle, pour
-  // que le menu mobile reflète lui aussi l'état de connexion au lieu de
-  // toujours afficher "Connexion" comme si personne n'était authentifié.
   const mobileAccountLinks = user
     ? [
-        { to: "/mon-compte", label: "Mon compte", icon: UserIcon },
-        ...(user.role === "proprietaire" ? [{ to: "/mes-bateaux", label: "Mes bateaux", icon: BoatMark }] : []),
-        ...(user.role !== "admin" ? [{ to: "/mes-reservations", label: "Mes réservations", icon: CalendarIcon }] : []),
-        { to: "/mes-messages", label: "Messages", icon: ChatIcon },
-        ...(user.role === "admin" ? [{ to: "/admin/documents", label: "Administration", icon: ShieldIcon }] : []),
+        { to: "/mon-compte", label: t("monCompte"), icon: UserIcon },
+        ...(user.role === "proprietaire" ? [{ to: "/mes-bateaux", label: t("mesBateaux"), icon: BoatMark }] : []),
+        ...(user.role !== "admin" ? [{ to: "/mes-reservations", label: t("mesReservations"), icon: CalendarIcon }] : []),
+        { to: "/mes-messages", label: t("messages"), icon: ChatIcon },
+        ...(user.role === "admin" ? [{ to: "/admin/documents", label: t("administration"), icon: ShieldIcon }] : []),
       ]
-    : [{ to: "/login", label: "Connexion", icon: UserIcon }];
+    : [{ to: "/login", label: t("connexion"), icon: UserIcon }];
 
   return (
     <header
@@ -399,13 +390,12 @@ export default function Header() {
           <span className="font-heading text-lg font-semibold">SailingLoc</span>
         </Link>
 
-        {/* Navigation principale */}
         <nav aria-label="Navigation principale" className="hidden items-center gap-6 lg:flex">
           <Link
             to="/"
             className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
           >
-            Accueil
+            {t("accueil")}
           </Link>
           {!isAdmin && (
             <>
@@ -414,13 +404,13 @@ export default function Header() {
                 to="/inspiration"
                 className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
               >
-                Inspiration
+                {t("inspiration")}
               </Link>
               <Link
                 to="/a-propos"
                 className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
               >
-                À propos
+                {t("apropos")}
               </Link>
             </>
           )}
@@ -432,14 +422,13 @@ export default function Header() {
               to="/register?role=proprietaire"
               className="text-sm font-medium text-gray-600 transition hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky focus:ring-offset-2 rounded"
             >
-              Devenir propriétaire
+              {t("devenirProprietaire")}
             </Link>
           )}
           <AccountLink />
           <LanguageCurrencyPicker />
         </div>
 
-        {/* Bouton menu mobile */}
         <button
           type="button"
           onClick={() => setMobileOpen((o) => !o)}
@@ -454,14 +443,12 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Barre de recherche desktop — masquée pour l'admin, non concerné */}
       {!isAdmin && (
         <div className="hidden justify-center px-6 pb-5 lg:flex" aria-hidden="false">
           <SearchBar />
         </div>
       )}
 
-      {/* Menu mobile */}
       {mobileOpen && (
         <div
           id="mobile-menu"
@@ -470,15 +457,15 @@ export default function Header() {
           {!isAdmin && <SearchBar className="mb-5" />}
           <nav aria-label="Navigation mobile" className="flex flex-col gap-3">
             {[
-              { to: "/", label: "Accueil" },
+              { to: "/", label: t("accueil") },
               ...(!isAdmin
                 ? [
-                    { to: "/boats", label: "Louer un bateau" },
-                    { to: "/inspiration", label: "Inspiration" },
+                    { to: "/boats", label: t("louerUnBateau") },
+                    { to: "/inspiration", label: t("inspiration") },
                     ...(user?.role !== "proprietaire"
-                      ? [{ to: "/register?role=proprietaire", label: "Devenir propriétaire" }]
+                      ? [{ to: "/register?role=proprietaire", label: t("devenirProprietaire") }]
                       : []),
-                    { to: "/a-propos", label: "À propos" },
+                    { to: "/a-propos", label: t("apropos") },
                   ]
                 : []),
             ].map((l) => (
@@ -519,7 +506,7 @@ export default function Header() {
                 className="flex items-center gap-2.5 py-1 text-left text-sm font-medium text-gray-700 hover:text-navy focus:outline-none focus:ring-2 focus:ring-sky rounded"
               >
                 <LogoutIcon className="h-4 w-4 shrink-0" />
-                Déconnexion
+                {t("deconnexion")}
               </button>
             )}
           </nav>
